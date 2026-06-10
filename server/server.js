@@ -1,7 +1,9 @@
+require("dotenv").config({ path: "./.env"});
+console.log("ENV CHECK:", process.env.MONGO_URI);
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+
 
 const authRoutes = require("./routes/authRoutes");
 const tripRoutes = require("./routes/tripRoutes");
@@ -14,13 +16,19 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
 
+console.log("1. Server started");
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB connected");
+    console.log("2. Mongo connected");
 
-    app.listen(5000, () =>
-      console.log("Server running on port 5000")
-    );
+    app.listen(5000, () => {
+      console.log("3. Server running on port 5000");
+    });
   })
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.log("MONGO FAILED:");
+    console.log(err);
+  });
+
