@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import {
   getTrip,
   requestJoin,
@@ -12,6 +13,8 @@ import {
   sendTripMessage,
   getJoinRequestMessages,
   sendJoinRequestMessage,
+  getDirectMessages,
+  sendDirectMessage,
 } from "../api/trips";
 import ChatThread from "../components/ChatThread";
 import RatingBadge from "../components/RatingBadge";
@@ -98,6 +101,31 @@ function Fact({ label, children }) {
   );
 }
 
+// The organizer can open a thread with each participant. A participant
+// only ever has one - with the organizer - since that is the only person
+// who can start one.
+//
+// Every thread is keyed by the *participant*, so the entry a participant
+// sees points at their own id even though it is labelled with the
+// organizer's name.
+function directContacts(trip, myId) {
+  if (trip.role === "organizer") {
+    return trip.members.map((m) => ({
+      threadId: String(m._id),
+      name: m.name,
+      isOrganizer: false,
+    }));
+  }
+
+  if (trip.role === "participant" && trip.organizer && myId) {
+    return [
+      { threadId: String(myId), name: trip.organizer.name, isOrganizer: true },
+    ];
+  }
+
+  return [];
+}
+
 function Avatar({ name, tone = "forest", size = 34 }) {
   const bg = tone === "clay" ? "bg-clay" : tone === "sand" ? "bg-surface-sunk" : "bg-forest";
   const fg = tone === "sand" ? "text-muted" : "text-canvas";
@@ -114,6 +142,7 @@ function Avatar({ name, tone = "forest", size = 34 }) {
 
 export default function TripDetails() {
   const { id } = useParams();
+  const { user: me } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
   const [trip, setTrip] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -123,6 +152,8 @@ export default function TripDetails() {
   const [leaveResult, setLeaveResult] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [inviteCopied, setInviteCopied] = useState(false);
+  // "group", or a participant's id for a one-to-one thread.
+  const [conversation, setConversation] = useState("group");
 
   // Present when you arrived through an invite link to a private trip.
   const invite = searchParams.get("invite");
@@ -202,6 +233,7 @@ export default function TripDetails() {
   const hasCost = Boolean(finalCost || estimate);
   const pendingCount = trip.joinRequests?.length || 0;
   const canChat = Boolean(trip.role || trip.myJoinRequestId);
+  const contacts = directContacts(trip, me?.id);
 
   // No real payment gateway: this opens the user's mail app with a
   // draft to the organizer, per the project's payment approach.
@@ -768,35 +800,111 @@ export default function TripDetails() {
       )}
 
       {/* ---------- CHAT ---------- */}
-      {activeTab === "chat" && (
+      {activeTab === "chat" && !trip.role && (
         <section className="max-w-[760px]">
-          {trip.role ? (
-            <>
-              <SectionHeading>Trip chat</SectionHeading>
-              <p className="m-0 mb-7 text-sm text-faint">
-                Everyone on this trip is in this conversation.
-              </p>
-              <ChatThread
-                loadMessages={() => getTripMessages(trip._id)}
-                sendMessage={(text) => sendTripMessage(trip._id, text)}
-                height={380}
-              />
-            </>
-          ) : (
-            <>
-              <SectionHeading>Chat with the organizer</SectionHeading>
-              <p className="m-0 mb-7 text-sm text-faint">
-                Private conversation about your join request.
-              </p>
-              <ChatThread
-                loadMessages={() => getJoinRequestMessages(trip.myJoinRequestId)}
-                sendMessage={(text) => sendJoinRequestMessage(trip.myJoinRequestId, text)}
-                emptyLabel="No messages yet. Introduce yourself to the organizer."
-                height={380}
-              />
-            </>
-          )}
+          <SectionHeading>Chat with the organizer</SectionHeading>
+          <p className="m-0 mb-7 text-sm text-faint">
+            Private conversation about your join request.
+          </p>
+          <ChatThread
+            loadMessages={() => getJoinRequestMessages(trip.myJoinRequestId)}
+            sendMessage={(text) => sendJoinRequestMessage(trip.myJoinRequestId, text)}
+            emptyLabel="No messages yet. Introduce yourself to the organizer."
+            height={380}
+          />
         </section>
+      )}
+
+      {activeTab === "chat" && trip.role && (
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-10 items-start">
+          <section className="min-w-0">
+            {conversation === "group" ? (
+              <>
+                <SectionHeading>Trip chat</SectionHeading>
+                <p className="m-0 mb-7 text-sm text-faint">
+                  Everyone on this trip is in this conversation.
+                </p>
+                <ChatThread
+                  key="group"
+                  loadMessages={() => getTripMessages(trip._id)}
+                  sendMessage={(text) => sendTripMessage(trip._id, text)}
+                  height={380}
+                />
+              </>
+            ) : (
+              <>
+                <SectionHeading>
+                  {contacts.find((c) => c.threadId === conversation)?.name ||
+                    "Conversation"}
+                </SectionHeading>
+                <p className="m-0 mb-7 text-sm text-faint">
+                  Just the two of you — nobody else on the trip sees this.
+                </p>
+                <ChatThread
+                  key={conversation}
+                  loadMessages={() => getDirectMessages(trip._id, conversation)}
+                  sendMessage={(text) => sendDirectMessage(trip._id, conversation, text)}
+                  emptyLabel="No messages yet."
+                  height={380}
+                />
+              </>
+            )}
+          </section>
+
+          {/* Conversation switcher */}
+          <aside className="lg:sticky lg:top-24 min-w-0">
+            <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-3.5">
+              Conversations
+            </div>
+
+            <div className="flex flex-col">
+              <button
+                onClick={() => setConversation("group")}
+                className={`flex items-center gap-3 text-left border-t border-line py-3.5 px-1 transition-colors ${
+                  conversation === "group" ? "text-ink" : "text-muted hover:text-ink"
+                }`}
+              >
+                <span className="w-[34px] h-[34px] shrink-0 rounded-full bg-ink text-canvas grid place-items-center text-xs">
+                  {trip.members.length + 1}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium">Group chat</span>
+                  <span className="block text-xs text-faint">Everyone on the trip</span>
+                </span>
+                {conversation === "group" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-clay shrink-0" />
+                )}
+              </button>
+
+              {contacts.map((p) => (
+                <button
+                  key={p.threadId}
+                  onClick={() => setConversation(p.threadId)}
+                  className={`flex items-center gap-3 text-left border-t border-line py-3.5 px-1 transition-colors ${
+                    conversation === p.threadId ? "text-ink" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  <Avatar name={p.name} tone={p.isOrganizer ? "forest" : "sand"} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium truncate">{p.name}</span>
+                    <span className="block text-xs text-faint">
+                      {p.isOrganizer ? "Organizer" : "Just you two"}
+                    </span>
+                  </span>
+                  {conversation === p.threadId && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-clay shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {trip.role === "participant" && (
+              <p className="text-xs text-faint mt-4 mb-0 leading-[1.5]">
+                Only the organizer can start a private thread with each person.
+              </p>
+            )}
+          </aside>
+        </div>
       )}
 
       {/* ---------- PEOPLE ---------- */}

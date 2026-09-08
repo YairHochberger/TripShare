@@ -17,6 +17,8 @@ const { createReview, getTripReviews } = require("../controllers/reviewControlle
 const {
   getTripMessages,
   sendTripMessage,
+  getDirectMessages,
+  sendDirectMessage,
 } = require("../controllers/messageController");
 const {
   createProposal,
@@ -43,6 +45,9 @@ router.get("/:id/reviews", auth, getTripReviews);
 
 router.get("/:id/messages", auth, getTripMessages);
 router.post("/:id/messages", auth, sendTripMessage);
+
+router.get("/:id/direct/:userId/messages", auth, getDirectMessages);
+router.post("/:id/direct/:userId/messages", auth, sendDirectMessage);
 
 router.get("/:id/proposals", auth, getProposals);
 router.post("/:id/proposals", auth, createProposal);

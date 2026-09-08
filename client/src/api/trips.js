@@ -40,6 +40,11 @@ export const getTripMessages = (tripId) => api.get(`/trips/${tripId}/messages`);
 export const sendTripMessage = (tripId, text) =>
   api.post(`/trips/${tripId}/messages`, { text });
 
+export const getDirectMessages = (tripId, userId) =>
+  api.get(`/trips/${tripId}/direct/${userId}/messages`);
+export const sendDirectMessage = (tripId, userId, text) =>
+  api.post(`/trips/${tripId}/direct/${userId}/messages`, { text });
+
 export const getJoinRequestMessages = (requestId) =>
   api.get(`/join-requests/${requestId}/messages`);
 export const sendJoinRequestMessage = (requestId, text) =>
