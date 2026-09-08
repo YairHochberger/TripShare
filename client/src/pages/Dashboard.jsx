@@ -8,7 +8,7 @@ import PhotoPlaceholder from "../components/PhotoPlaceholder";
 import TripFilters, {
   EMPTY_FILTERS,
   applyFilters,
-  isFiltering,
+  activeFilterCount,
 } from "../components/TripFilters";
 import { TripCardSkeleton } from "../components/Skeleton";
 
@@ -153,6 +153,8 @@ export default function Dashboard() {
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS });
   const [myLevel, setMyLevel] = useState("beginner");
+  // Filters stay out of the way until asked for.
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     async function fetchTrips() {
@@ -178,6 +180,7 @@ export default function Dashboard() {
   const myTrips = trips.filter((t) => t.role);
   const openTrips = trips.filter((t) => !t.role && t.status === "open");
   const discoverTrips = applyFilters(openTrips, filters, myLevel);
+  const filterCount = activeFilterCount(filters);
 
   const featured = myTrips[0];
   const otherMine = myTrips.slice(1);
@@ -226,16 +229,42 @@ export default function Dashboard() {
       ) : activeTab === "discover" ? (
         /* ---------- OTHER PEOPLE'S TRIPS ---------- */
         <section>
-          <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
+          <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-line pb-4 mb-7">
             <h2 className="font-display text-[30px] m-0">Trips looking for people</h2>
-            <span className="text-[13px] text-faint">
-              {openTrips.length === 0
-                ? "Nothing open right now"
-                : `${openTrips.length} open · organised by travellers with reviews`}
-            </span>
+
+            <div className="flex items-center gap-5">
+              <span className="text-[13px] text-faint">
+                {openTrips.length === 0
+                  ? "Nothing open right now"
+                  : `${openTrips.length} open`}
+              </span>
+
+              {openTrips.length > 0 && (
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  aria-expanded={showFilters}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13px] border transition-colors ${
+                    showFilters || filterCount > 0
+                      ? "border-ink text-ink"
+                      : "border-line-bold text-muted hover:border-ink hover:text-ink"
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M3 5h18M6 12h12M10 19h4" />
+                  </svg>
+                  Filters
+                  {filterCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-clay text-canvas text-[11px] grid place-items-center">
+                      {filterCount}
+                    </span>
+                  )}
+                  <span className="text-faint">{showFilters ? "▴" : "▾"}</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {openTrips.length > 0 && (
+          {openTrips.length > 0 && showFilters && (
             <TripFilters
               filters={filters}
               onChange={setFilters}
@@ -243,6 +272,21 @@ export default function Dashboard() {
               totalCount={openTrips.length}
               myLevel={myLevel}
             />
+          )}
+
+          {/* Filters can be hiding results while the panel is closed */}
+          {!showFilters && filterCount > 0 && (
+            <div className="flex items-center gap-4 mb-7 -mt-1">
+              <span className="text-[13px] text-muted">
+                {discoverTrips.length} of {openTrips.length} trips match your filters
+              </span>
+              <button
+                onClick={() => setFilters({ ...EMPTY_FILTERS })}
+                className="text-[13px] text-clay hover:text-clay-deep transition-colors"
+              >
+                Clear
+              </button>
+            </div>
           )}
 
           {openTrips.length === 0 ? (

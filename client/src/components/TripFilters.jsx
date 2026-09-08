@@ -25,7 +25,11 @@ const TYPE_DEMAND = {
 };
 
 export function isFiltering(filters) {
-  return Object.values(filters).some((v) => v !== "" && v !== false);
+  return activeFilterCount(filters) > 0;
+}
+
+export function activeFilterCount(filters) {
+  return Object.values(filters).filter((v) => v !== "" && v !== false).length;
 }
 
 // Matches on place, type, start date and price. Place looks at the
