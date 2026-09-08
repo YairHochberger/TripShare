@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getTrips } from "../api/trips";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import TripCard from "../components/TripCard";
+import TripTabs from "../components/TripTabs";
 import PhotoPlaceholder from "../components/PhotoPlaceholder";
 import { TripCardSkeleton } from "../components/Skeleton";
 
@@ -40,7 +41,17 @@ function Stat({ value, label }) {
   );
 }
 
-// The one trip that gets the wide treatment at the top of the page.
+function EmptyState({ title, children, action }) {
+  return (
+    <div className="bg-surface border border-dashed border-line-strong rounded-[20px] p-16 text-center">
+      <h2 className="font-display text-[28px] m-0 mb-2">{title}</h2>
+      <p className="m-0 mb-6 text-muted max-w-[46ch] mx-auto">{children}</p>
+      {action}
+    </div>
+  );
+}
+
+// The one trip that gets the wide treatment at the top of your own tab.
 function FeaturedTrip({ trip }) {
   const range = dateRange(trip.startDate, trip.endDate);
   const initials = [trip.organizer, ...trip.members].slice(0, 3);
@@ -130,6 +141,7 @@ function FeaturedTrip({ trip }) {
 }
 
 export default function Dashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -167,6 +179,20 @@ export default function Dashboard() {
         : "—"
     : "—";
 
+  // Other people's trips lead, so there's something to browse on arrival.
+  const tabs = [
+    { key: "discover", label: "Trips to join" },
+    { key: "mine", label: "Your trips" },
+  ];
+
+  const requested = searchParams.get("tab");
+  const activeTab = tabs.some((t) => t.key === requested) ? requested : "discover";
+
+  const setActiveTab = (key) => {
+    searchParams.set("tab", key);
+    setSearchParams(searchParams, { replace: true });
+  };
+
   return (
     <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
       <div className="flex flex-wrap gap-6 items-end justify-between mb-10">
@@ -198,70 +224,88 @@ export default function Dashboard() {
         </div>
       )}
 
-      {loading && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-[22px]">
+      <TripTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+
+      {loading ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
           <TripCardSkeleton />
           <TripCardSkeleton />
           <TripCardSkeleton />
         </div>
-      )}
+      ) : activeTab === "discover" ? (
+        /* ---------- OTHER PEOPLE'S TRIPS ---------- */
+        <section>
+          <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
+            <h2 className="font-display text-[30px] m-0">Trips looking for people</h2>
+            <span className="text-[13px] text-faint">
+              {discoverTrips.length === 0
+                ? "Nothing open right now"
+                : `${discoverTrips.length} open · organised by travellers with reviews`}
+            </span>
+          </div>
 
-      {!loading && (
-        <>
-          {featured ? (
-            <FeaturedTrip trip={featured} />
+          {discoverTrips.length === 0 ? (
+            <EmptyState
+              title="No trips to join yet"
+              action={
+                <Link
+                  to="/create"
+                  className="inline-flex items-center gap-2 bg-ink text-canvas rounded-full px-[22px] py-3 text-sm font-medium hover:bg-clay transition-colors"
+                >
+                  Organize one instead
+                </Link>
+              }
+            >
+              Nobody has an open trip at the moment. Start your own and let people ask to
+              join.
+            </EmptyState>
           ) : (
-            <div className="bg-surface border border-dashed border-line-strong rounded-[20px] p-16 text-center">
-              <h2 className="font-display text-[28px] m-0 mb-2">No trips yet</h2>
-              <p className="m-0 mb-6 text-muted">
-                Start one of your own, or join a trip that's looking for people.
-              </p>
-              <Link
-                to="/create"
-                className="inline-flex items-center gap-2 bg-ink text-canvas rounded-full px-[22px] py-3 text-sm font-medium hover:bg-clay transition-colors"
-              >
-                Create a trip
-              </Link>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
+              {discoverTrips.map((trip) => (
+                <TripCard key={trip._id} trip={trip} />
+              ))}
             </div>
           )}
+        </section>
+      ) : (
+        /* ---------- YOUR OWN TRIPS ---------- */
+        <section>
+          {!featured ? (
+            <EmptyState
+              title="No trips yet"
+              action={
+                <Link
+                  to="/create"
+                  className="inline-flex items-center gap-2 bg-ink text-canvas rounded-full px-[22px] py-3 text-sm font-medium hover:bg-clay transition-colors"
+                >
+                  Create a trip
+                </Link>
+              }
+            >
+              Start one of your own, or browse the trips other people are looking to fill.
+            </EmptyState>
+          ) : (
+            <>
+              <FeaturedTrip trip={featured} />
 
-          {otherMine.length > 0 && (
-            <section className="mt-[72px]">
-              <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
-                <h2 className="font-display text-[30px] m-0">Your other trips</h2>
-                <span className="text-[13px] text-faint">
-                  {otherMine.length} more
-                </span>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
-                {otherMine.map((trip) => (
-                  <TripCard key={trip._id} trip={trip} />
-                ))}
-              </div>
-            </section>
+              {otherMine.length > 0 && (
+                <div className="mt-[72px]">
+                  <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
+                    <h2 className="font-display text-[30px] m-0">Also yours</h2>
+                    <span className="text-[13px] text-faint">
+                      {otherMine.length} more
+                    </span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
+                    {otherMine.map((trip) => (
+                      <TripCard key={trip._id} trip={trip} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
-
-          <section className="mt-[72px]">
-            <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
-              <h2 className="font-display text-[30px] m-0">Trips looking for people</h2>
-              <span className="text-[13px] text-faint">
-                Organised by travellers with reviews
-              </span>
-            </div>
-
-            {discoverTrips.length === 0 ? (
-              <p className="text-muted text-[15px]">
-                No open trips to join right now.
-              </p>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
-                {discoverTrips.map((trip) => (
-                  <TripCard key={trip._id} trip={trip} />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
+        </section>
       )}
     </main>
   );
