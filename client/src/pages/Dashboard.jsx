@@ -195,29 +195,6 @@ export default function Dashboard() {
 
   return (
     <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
-      <div className="flex flex-wrap gap-6 items-end justify-between mb-10">
-        <div className="max-w-[620px]">
-          <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-3.5">
-            Your trips
-          </div>
-          <h1 className="font-display text-[52px] leading-[1.02] tracking-[-0.02em] m-0 mb-3.5 text-pretty">
-            One weekend, six people,
-            <br />
-            <em>one plan</em> everyone agreed on.
-          </h1>
-          <p className="m-0 text-base leading-[1.55] text-muted max-w-[46ch]">
-            Destinations, lodging, costs and who's actually coming — settled in one place
-            before anyone packs a bag.
-          </p>
-        </div>
-
-        <div className="flex gap-9 pb-1.5">
-          <Stat value={organizing} label="Organizing" />
-          <Stat value={seats} label="Seats filled" />
-          <Stat value={perPerson} label="Per person" />
-        </div>
-      </div>
-
       {error && (
         <div className="border border-clay/30 bg-clay/5 text-clay-deep rounded-2xl p-4 text-sm mb-8">
           {error}
@@ -227,8 +204,7 @@ export default function Dashboard() {
       <TripTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
-          <TripCardSkeleton />
+        <div className="flex flex-col gap-5">
           <TripCardSkeleton />
           <TripCardSkeleton />
         </div>
@@ -260,9 +236,9 @@ export default function Dashboard() {
               join.
             </EmptyState>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
+            <div className="flex flex-col gap-5">
               {discoverTrips.map((trip) => (
-                <TripCard key={trip._id} trip={trip} />
+                <TripCard key={trip._id} trip={trip} wide />
               ))}
             </div>
           )}
@@ -270,6 +246,30 @@ export default function Dashboard() {
       ) : (
         /* ---------- YOUR OWN TRIPS ---------- */
         <section>
+          {/* The hero speaks about your own trips, so it lives here */}
+          <div className="flex flex-wrap gap-6 items-end justify-between mb-10">
+            <div className="max-w-[620px]">
+              <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-3.5">
+                Your trips
+              </div>
+              <h1 className="font-display text-[52px] leading-[1.02] tracking-[-0.02em] m-0 mb-3.5 text-pretty">
+                One weekend, six people,
+                <br />
+                <em>one plan</em> everyone agreed on.
+              </h1>
+              <p className="m-0 text-base leading-[1.55] text-muted max-w-[46ch]">
+                Destinations, lodging, costs and who's actually coming — settled in one
+                place before anyone packs a bag.
+              </p>
+            </div>
+
+            <div className="flex gap-9 pb-1.5">
+              <Stat value={organizing} label="Organizing" />
+              <Stat value={seats} label="Seats filled" />
+              <Stat value={perPerson} label="Per person" />
+            </div>
+          </div>
+
           {!featured ? (
             <EmptyState
               title="No trips yet"
