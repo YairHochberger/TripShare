@@ -42,9 +42,26 @@ const TRAVEL_LABELS = {
   other: "Other",
 };
 
+const STATUS_TONE = {
+  open: "text-forest bg-forest-mist",
+  full: "text-clay bg-clay/10",
+  locked: "text-muted bg-surface-sunk",
+  completed: "text-forest bg-forest-mist",
+  cancelled: "text-clay-deep bg-clay/10",
+};
+
 function formatDate(d) {
   if (!d) return null;
-  return new Date(d).toLocaleDateString();
+  return new Date(d).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function shortDate(d) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
 // Only ever link out to real web addresses - anything else (javascript:,
@@ -59,17 +76,37 @@ function safeUrl(url) {
   }
 }
 
-function Card({ title, subtitle, children }) {
+function SectionHeading({ children, aside }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow space-y-3">
-      {title && (
-        <div>
-          <h3 className="font-semibold">{title}</h3>
-          {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
-        </div>
-      )}
-      {children}
+    <div className="flex items-baseline justify-between gap-4 mb-3.5">
+      <h2 className="font-display text-[26px] m-0">{children}</h2>
+      {aside}
     </div>
+  );
+}
+
+function Fact({ label, children }) {
+  return (
+    <div>
+      <div className="text-[11px] tracking-[0.1em] uppercase text-faint mb-1.5">
+        {label}
+      </div>
+      <div className="text-[15px]">{children}</div>
+    </div>
+  );
+}
+
+function Avatar({ name, tone = "forest", size = 34 }) {
+  const bg = tone === "clay" ? "bg-clay" : tone === "sand" ? "bg-surface-sunk" : "bg-forest";
+  const fg = tone === "sand" ? "text-muted" : "text-canvas";
+
+  return (
+    <span
+      className={`shrink-0 rounded-full grid place-items-center ${bg} ${fg}`}
+      style={{ width: size, height: size, fontSize: size * 0.38 }}
+    >
+      {name?.[0]?.toUpperCase() || "?"}
+    </span>
   );
 }
 
@@ -169,11 +206,11 @@ export default function TripDetails() {
       ).filter((p) => !trip.reviewedUserIds?.includes(String(p._id)));
 
   const tabs = [
-    { key: "overview", label: "Overview", icon: "📋" },
-    { key: "route", label: "Route", icon: "🗺️" },
-    ...(canChat ? [{ key: "chat", label: "Chat", icon: "💬" }] : []),
-    { key: "people", label: "People", icon: "👥", badge: pendingCount },
-    ...(isFinished && trip.role ? [{ key: "reviews", label: "Reviews", icon: "⭐" }] : []),
+    { key: "overview", label: "Overview" },
+    { key: "route", label: "Route" },
+    ...(canChat ? [{ key: "chat", label: "Chat" }] : []),
+    { key: "people", label: "People", badge: pendingCount },
+    ...(isFinished && trip.role ? [{ key: "reviews", label: "Reviews" }] : []),
   ];
 
   const requested = searchParams.get("tab");
@@ -184,42 +221,54 @@ export default function TripDetails() {
     setSearchParams(searchParams, { replace: true });
   };
 
+  const dates =
+    trip.startDate && trip.endDate
+      ? `${shortDate(trip.startDate)} – ${formatDate(trip.endDate)}`
+      : formatDate(trip.startDate) || "Not set";
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header - stays visible whichever tab you're on */}
-      <div className="bg-white rounded-2xl p-6 shadow space-y-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">{trip.title}</h2>
-            <p className="text-gray-500">
-              {trip.meetingLocation || "No meeting location set"}
-            </p>
-          </div>
-          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-            {trip.status}
-          </span>
-        </div>
+    <main className="max-w-[1180px] mx-auto px-8 pt-10 pb-24">
+      <Link
+        to="/dashboard"
+        className="inline-flex items-center gap-2 text-[13px] text-faint hover:text-ink mb-[26px] transition-colors"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 12H5M11 6l-6 6 6 6" />
+        </svg>
+        All trips
+      </Link>
 
-        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-          <span>Type: {TYPE_LABELS[trip.type] || "Other"}</span>
-          {trip.startDate && <span>From: {formatDate(trip.startDate)}</span>}
-          {trip.endDate && <span>To: {formatDate(trip.endDate)}</span>}
-          {trip.maxCapacity > 0 && (
-            <span>
-              Participants: {trip.members.length}/{trip.maxCapacity}
+      {/* Header */}
+      <div className="flex flex-wrap gap-8 justify-between items-start">
+        <div className="max-w-[640px]">
+          <div className="flex items-center gap-3 mb-3.5">
+            <span
+              className={`inline-flex items-center gap-[7px] text-[11px] tracking-[0.14em] uppercase px-[11px] py-1.5 rounded-full ${
+                STATUS_TONE[trip.status] || STATUS_TONE.open
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {trip.status}
             </span>
-          )}
+            <span className="text-[11px] tracking-[0.14em] uppercase text-faint">
+              {TYPE_LABELS[trip.type] || "Other"}
+            </span>
+          </div>
+
+          <h1 className="font-display text-[46px] leading-[1.04] tracking-[-0.02em] m-0 mb-3">
+            {trip.title}
+          </h1>
+
+          <p className="m-0 text-[15px] text-muted">
+            Organised by{" "}
+            <Link to={`/users/${trip.organizer?._id}`} className="text-clay hover:text-clay-deep">
+              {trip.organizer?.name}
+            </Link>{" "}
+            · <RatingBadge rating={trip.organizer?.organizerRating} label="organizer" />
+          </p>
         </div>
 
-        <div className="text-sm text-gray-500">
-          Organized by {trip.organizer?.name}{" "}
-          <RatingBadge rating={trip.organizer?.organizerRating} label="organizer" />
-        </div>
-
-        {actionError && <p className="text-red-600 text-sm">{actionError}</p>}
-
-        {/* Viewer actions */}
-        <div className="pt-2 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5 items-center">
           {trip.role === "organizer" && (
             <>
               {(trip.status === "open" || trip.status === "locked") && (
@@ -230,9 +279,9 @@ export default function TripDetails() {
                       updateTripStatus(trip._id, trip.status === "open" ? "locked" : "open")
                     )
                   }
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-60"
+                  className="bg-ink text-canvas rounded-full px-5 py-3 text-sm font-medium hover:bg-clay disabled:opacity-60 transition-colors"
                 >
-                  {trip.status === "open" ? "Lock Trip" : "Reopen Trip"}
+                  {trip.status === "open" ? "Lock trip" : "Reopen trip"}
                 </button>
               )}
 
@@ -241,16 +290,16 @@ export default function TripDetails() {
                   <button
                     disabled={actionLoading}
                     onClick={() => runAction(() => updateTripStatus(trip._id, "completed"))}
-                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-60"
+                    className="border border-line-bold rounded-full px-5 py-3 text-sm hover:border-ink disabled:opacity-60 transition-colors"
                   >
-                    Mark as Completed
+                    Mark completed
                   </button>
                   <button
                     disabled={actionLoading}
                     onClick={() => runAction(() => updateTripStatus(trip._id, "cancelled"))}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-60"
+                    className="px-2 py-3 text-sm text-faint hover:text-clay disabled:opacity-60 transition-colors"
                   >
-                    Cancel Trip
+                    Cancel trip
                   </button>
                 </>
               )}
@@ -259,21 +308,21 @@ export default function TripDetails() {
 
           {trip.role === "participant" && !isFinished && (
             <>
-              <span className="inline-block bg-purple-100 text-purple-700 font-semibold px-4 py-2 rounded-lg">
-                You're going on this trip
+              <span className="inline-flex items-center gap-2 text-sm text-forest bg-forest-mist rounded-full px-5 py-3">
+                You're going
               </span>
               <button
                 disabled={actionLoading}
                 onClick={handleLeave}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 disabled:opacity-60"
+                className="px-2 py-3 text-sm text-faint hover:text-clay disabled:opacity-60 transition-colors"
               >
-                Leave Trip
+                Leave trip
               </button>
             </>
           )}
 
           {!trip.role && trip.hasPendingRequest && (
-            <span className="inline-block bg-orange-100 text-orange-700 font-semibold px-4 py-2 rounded-lg">
+            <span className="inline-flex items-center text-sm text-clay bg-clay/10 rounded-full px-5 py-3">
               Join request pending
             </span>
           )}
@@ -282,393 +331,563 @@ export default function TripDetails() {
             <button
               disabled={actionLoading}
               onClick={() => runAction(() => requestJoin(trip._id))}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+              className="bg-ink text-canvas rounded-full px-6 py-3 text-sm font-medium hover:bg-clay disabled:opacity-60 transition-colors"
             >
-              Request to Join
+              Request to join
             </button>
           )}
         </div>
       </div>
 
+      {actionError && (
+        <p className="mt-5 text-sm text-clay-deep bg-clay/5 border border-clay/20 rounded-xl px-4 py-3">
+          {actionError}
+        </p>
+      )}
+
       {leaveResult && (
-        <div
-          className={`rounded-2xl p-4 text-sm ${
+        <p
+          className={`mt-5 text-sm rounded-xl px-4 py-3 border ${
             leaveResult.feeOwed
-              ? "bg-orange-50 text-orange-800 ring-1 ring-orange-200"
-              : "bg-green-50 text-green-800 ring-1 ring-green-200"
+              ? "text-clay-deep bg-clay/5 border-clay/20"
+              : "text-forest bg-forest-mist border-forest/20"
           }`}
         >
           {leaveResult.message}
           {leaveResult.feeOwed && (
-            <span className="font-semibold"> (₪{leaveResult.amountOwed})</span>
+            <span className="font-medium"> (₪{leaveResult.amountOwed})</span>
           )}
-        </div>
+        </p>
       )}
 
-      <TripTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      {/* Facts */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-[34px] py-[22px] border-y border-line">
+        <Fact label="Dates">{dates}</Fact>
+        <Fact label="Meeting point">{trip.meetingLocation || "Not set"}</Fact>
+        <Fact label="Participants">
+          {trip.members.length}
+          {trip.maxCapacity > 0 ? ` of ${trip.maxCapacity}` : ""}
+        </Fact>
+        <Fact label="Cost per person">
+          {finalCost
+            ? `₪${finalCost} confirmed`
+            : estimate
+              ? `₪${estimate} estimated`
+              : "Not set"}
+        </Fact>
+      </div>
+
+      <div className="mt-8">
+        <TripTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+      </div>
 
       {/* ---------- OVERVIEW ---------- */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
-          {trip.description && (
-            <Card title="About this trip">
-              <p className="text-gray-700">{trip.description}</p>
-            </Card>
-          )}
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-10 items-start">
+          <div className="flex flex-col gap-11 min-w-0">
+            <section>
+              <SectionHeading>About this trip</SectionHeading>
+              <p className="m-0 text-[17px] leading-[1.65] text-ink-soft max-w-[62ch] text-pretty">
+                {trip.description || "No description has been added yet."}
+              </p>
+            </section>
 
-          {trip.role && (
-            <Card
-              title="Proposed Changes"
-              subtitle="Changes the organizer wants to make to this trip, and where the group stands on them."
-            >
-              <ProposedChanges trip={trip} onApplied={loadTrip} />
-            </Card>
-          )}
+            {trip.role && (
+              <section>
+                <SectionHeading>Proposed changes</SectionHeading>
+                <p className="m-0 mb-5 text-sm text-faint">
+                  What the organizer wants to change, and where the group stands.
+                </p>
+                <ProposedChanges trip={trip} onApplied={loadTrip} />
+              </section>
+            )}
 
-          {hasCost && (
-            <Card title="Cost & Payment">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-2xl font-bold text-blue-600">
-                  ₪{finalCost ?? estimate}
-                </span>
-                <span className="text-sm text-gray-500">
-                  per person {finalCost ? "(confirmed)" : "(estimated)"}
-                </span>
-              </div>
+            <section>
+              <SectionHeading>Lodging plan</SectionHeading>
+              {!trip.lodgingPlan?.length ? (
+                <p className="text-[15px] text-faint m-0">No lodging plan added.</p>
+              ) : (
+                <ol className="list-none m-0 p-0">
+                  {trip.lodgingPlan.map((night, i) => (
+                    <li
+                      key={i}
+                      className="grid grid-cols-[84px_minmax(0,1fr)] sm:grid-cols-[104px_minmax(0,1fr)] gap-[22px] py-[22px] border-t border-line"
+                    >
+                      <div>
+                        <div className="font-display text-[22px] leading-[1.1]">
+                          Night {i + 1}
+                        </div>
+                        {night.date && (
+                          <div className="text-xs text-faint tracking-[0.08em] uppercase mt-1">
+                            {shortDate(night.date)}
+                          </div>
+                        )}
+                      </div>
 
-              {!finalCost && (
-                <p className="text-sm text-gray-600">
-                  This is an estimate.{" "}
-                  {trip.finalCostDueDate ? (
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                          <h3 className="text-base font-semibold m-0">
+                            {night.location || "Location to be confirmed"}
+                          </h3>
+                          <span className="text-[11px] tracking-[0.12em] uppercase text-muted bg-surface-sunk px-2.5 py-[5px] rounded-full">
+                            {LODGING_LABELS[night.type] || "Other"}
+                          </span>
+                        </div>
+
+                        {night.description && (
+                          <p className="m-0 mb-2.5 text-[15px] leading-[1.55] text-muted">
+                            {night.description}
+                          </p>
+                        )}
+
+                        {safeUrl(night.bookingUrl) && (
+                          <a
+                            href={safeUrl(night.bookingUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-clay hover:text-clay-deep text-[15px]"
+                          >
+                            View the booking ↗
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          </div>
+
+          <aside className="lg:sticky lg:top-24 flex flex-col gap-[18px] min-w-0">
+            {hasCost && (
+              <div className="bg-night text-canvas rounded-[18px] p-7">
+                <div className="text-[11px] tracking-[0.16em] uppercase text-night-faint mb-4">
+                  Cost &amp; payment
+                </div>
+
+                <div className="flex items-baseline gap-2.5 mb-1.5">
+                  <span className="font-display text-[44px] leading-none">
+                    ₪{finalCost ?? estimate}
+                  </span>
+                  <span className="text-sm text-night-faint">
+                    per person{finalCost ? "" : ", estimated"}
+                  </span>
+                </div>
+
+                <p className="mt-3.5 mb-[22px] text-sm leading-[1.6] text-night-soft">
+                  {dueDate ? (
                     <>
-                      The organizer confirms the exact price by{" "}
-                      <span className="font-semibold">
-                        {formatDate(trip.finalCostDueDate)}
-                      </span>
-                      .
+                      Cancel before {shortDate(trip.paymentDueDate)} and you owe nothing.
+                      After that the fee still stands — the organizer may already have
+                      paid for bookings.
                     </>
                   ) : (
-                    "The organizer will confirm the exact price closer to the trip."
+                    "Cancelling before the payment date costs nothing. After it, the fee is still owed."
                   )}
                 </p>
-              )}
 
-              {finalCost && estimate && estimate !== finalCost && (
-                <p className="text-xs text-gray-400">
-                  Originally estimated at ₪{estimate}.
-                </p>
-              )}
-
-              {dueDate && (
-                <p className="text-sm text-gray-600">
-                  Payment due by{" "}
-                  <span className="font-semibold">{formatDate(trip.paymentDueDate)}</span>
-                  {duePassed && (
-                    <span className="text-orange-600"> — the due date has passed</span>
-                  )}
-                </p>
-              )}
-
-              <p className="text-xs text-gray-500">
-                Cancelling before the due date costs nothing. On or after it, the fee is
-                still owed, since the organizer may already have paid for bookings.
-              </p>
-
-              {trip.role === "participant" && !isFinished && finalCost && (
-                <div>
-                  <a
-                    href={payNowHref()}
-                    className="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                  >
-                    Pay Now
-                  </a>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Opens your email app with a message to the organizer. TripShare
-                    doesn't process payments itself.
-                  </p>
-                </div>
-              )}
-            </Card>
-          )}
-
-          <Card title="Lodging Plan">
-            {!trip.lodgingPlan?.length ? (
-              <p className="text-sm text-gray-400">No lodging plan added.</p>
-            ) : (
-              <div className="space-y-2">
-                {trip.lodgingPlan.map((night, i) => (
-                  <div key={i} className="border rounded-lg p-3 text-sm">
-                    <div className="font-semibold">
-                      {formatDate(night.date) || `Night ${i + 1}`} —{" "}
-                      {LODGING_LABELS[night.type] || "Other"}
+                <div className="flex flex-col gap-3 pt-5 border-t border-night-line">
+                  {!finalCost && trip.finalCostDueDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-night-faint">Price confirmed by</span>
+                      <span>{shortDate(trip.finalCostDueDate)}</span>
                     </div>
-                    {night.location && (
-                      <div className="text-gray-500">{night.location}</div>
-                    )}
-                    {night.description && (
-                      <div className="text-gray-500">{night.description}</div>
-                    )}
-                    {safeUrl(night.bookingUrl) && (
-                      <a
-                        href={safeUrl(night.bookingUrl)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block mt-1 text-blue-600 font-semibold hover:underline"
-                      >
-                        View the booking ↗
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  )}
+                  {finalCost && estimate && estimate !== finalCost && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-night-faint">Originally estimated</span>
+                      <span>₪{estimate}</span>
+                    </div>
+                  )}
+                  {dueDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-night-faint">Payment due</span>
+                      <span className={duePassed ? "text-clay" : ""}>
+                        {shortDate(trip.paymentDueDate)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {trip.role === "participant" && !isFinished && finalCost && (
+                  <>
+                    <a
+                      href={payNowHref()}
+                      className="block text-center w-full mt-5 bg-canvas text-ink rounded-full px-5 py-3.5 text-[15px] font-medium hover:bg-clay hover:text-canvas transition-colors"
+                    >
+                      Pay now
+                    </a>
+                    <p className="mt-2.5 mb-0 text-xs text-night-faint text-center">
+                      Opens your email app. TripShare doesn't process payments.
+                    </p>
+                  </>
+                )}
               </div>
             )}
-          </Card>
+
+            <div className="bg-surface border border-line rounded-[18px] p-[26px]">
+              <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-3.5">
+                Who's in
+              </div>
+
+              <div className="flex flex-col gap-3.5">
+                <Link
+                  to={`/users/${trip.organizer?._id}`}
+                  className="flex items-center gap-3 group"
+                >
+                  <Avatar name={trip.organizer?.name} tone="forest" />
+                  <div>
+                    <div className="text-sm font-medium group-hover:text-clay transition-colors">
+                      {trip.organizer?.name}
+                    </div>
+                    <div className="text-xs text-faint">Organizer</div>
+                  </div>
+                </Link>
+
+                {trip.members.map((m) => (
+                  <Link
+                    key={m._id}
+                    to={`/users/${m._id}`}
+                    className="flex items-center gap-3 group"
+                  >
+                    <Avatar name={m.name} tone="clay" />
+                    <div>
+                      <div className="text-sm font-medium group-hover:text-clay transition-colors">
+                        {m.name}
+                      </div>
+                      <div className="text-xs text-faint">
+                        <RatingBadge rating={m.participantRating} label="participant" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+
+                {trip.members.length === 0 && (
+                  <p className="text-sm text-faint m-0">No participants yet.</p>
+                )}
+              </div>
+
+              {trip.role === "organizer" && pendingCount > 0 && (
+                <button
+                  onClick={() => setActiveTab("people")}
+                  className="w-full mt-5 border border-line-bold rounded-full px-4 py-2.5 text-sm hover:border-ink transition-colors"
+                >
+                  {pendingCount} request{pendingCount === 1 ? "" : "s"} waiting
+                </button>
+              )}
+            </div>
+          </aside>
         </div>
       )}
 
       {/* ---------- ROUTE ---------- */}
       {activeTab === "route" && (
-        <Card title="Travel Plan" subtitle="Tap a stop to find it on the map.">
-          {!trip.travelPlan?.length ? (
-            <p className="text-sm text-gray-400">No travel plan added.</p>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+        <div className="grid lg:grid-cols-2 gap-10 items-start">
+          <section className="min-w-0">
+            <SectionHeading>Travel plan</SectionHeading>
+            <p className="m-0 mb-[26px] text-sm text-faint">
+              Tap a stop to find it on the map.
+            </p>
+
+            {!trip.travelPlan?.length ? (
+              <p className="text-[15px] text-faint">No travel plan added.</p>
+            ) : (
+              <ol className="list-none m-0 p-0">
                 {trip.travelPlan.map((step, i) => {
                   const pinned = typeof step.lat === "number";
                   const isActive = activeStep === i;
+                  const isLast = i === trip.travelPlan.length - 1;
 
                   return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setActiveStep(isActive ? null : i)}
-                      className={`w-full text-left border rounded-lg p-3 text-sm transition ${
-                        isActive ? "border-blue-500 bg-blue-50" : "hover:border-gray-400"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
+                    <li key={i} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setActiveStep(isActive ? null : i)}
+                        className="w-full text-left grid grid-cols-[44px_minmax(0,1fr)] gap-[18px] pb-8"
+                      >
                         <span
-                          className={`w-6 h-6 shrink-0 rounded-full text-white text-xs font-bold flex items-center justify-center ${
-                            isActive ? "bg-blue-600" : "bg-slate-500"
+                          className={`w-[34px] h-[34px] rounded-full grid place-items-center text-[13px] relative z-10 border transition-colors ${
+                            isActive
+                              ? "bg-ink text-canvas border-ink"
+                              : "bg-canvas text-ink border-ink"
                           }`}
                         >
                           {i + 1}
                         </span>
-                        <span className="font-semibold">
-                          {TRAVEL_LABELS[step.mode] || "Other"}
-                        </span>
-                        {!pinned && (
-                          <span className="text-xs text-gray-400 ml-auto">not on map</span>
-                        )}
-                      </div>
 
-                      {step.location && (
-                        <div className="text-gray-500 mt-1">{step.location}</div>
+                        <span className="block pt-1">
+                          <span className="block text-[17px] font-semibold mb-1">
+                            {TRAVEL_LABELS[step.mode] || "Other"}
+                          </span>
+                          {step.location && (
+                            <span className="block text-[13px] tracking-[0.08em] uppercase text-clay mb-2.5">
+                              {step.location}
+                            </span>
+                          )}
+                          {step.description && (
+                            <span className="block text-[15px] leading-[1.6] text-muted max-w-[44ch]">
+                              {step.description}
+                            </span>
+                          )}
+                          {!pinned && (
+                            <span className="block text-xs text-faint mt-2">
+                              Not placed on the map
+                            </span>
+                          )}
+                        </span>
+                      </button>
+
+                      {!isLast && (
+                        <span className="absolute left-[17px] top-[34px] bottom-0 w-px bg-line-strong" />
                       )}
-                      {step.description && (
-                        <div className="text-gray-500">{step.description}</div>
-                      )}
-                    </button>
+                    </li>
                   );
                 })}
-              </div>
+              </ol>
+            )}
+          </section>
 
-              <TripMap
-                steps={trip.travelPlan}
-                activeIndex={activeStep}
-                onMarkerClick={(i) => setActiveStep(i)}
-                height={420}
-              />
-            </div>
-          )}
-        </Card>
+          <div className="min-w-0">
+            <TripMap
+              steps={trip.travelPlan || []}
+              activeIndex={activeStep}
+              onMarkerClick={(i) => setActiveStep(i)}
+              height={420}
+            />
+          </div>
+        </div>
       )}
 
       {/* ---------- CHAT ---------- */}
       {activeTab === "chat" && (
-        <div className="space-y-6">
-          {trip.role && (
-            <Card
-              title="Trip Chat"
-              subtitle="Everyone on this trip is in this conversation."
-            >
+        <section className="max-w-[760px]">
+          {trip.role ? (
+            <>
+              <SectionHeading>Trip chat</SectionHeading>
+              <p className="m-0 mb-7 text-sm text-faint">
+                Everyone on this trip is in this conversation.
+              </p>
               <ChatThread
                 loadMessages={() => getTripMessages(trip._id)}
                 sendMessage={(text) => sendTripMessage(trip._id, text)}
-                height={340}
+                height={380}
               />
-            </Card>
-          )}
-
-          {!trip.role && trip.myJoinRequestId && (
-            <Card
-              title="Chat with the organizer"
-              subtitle="Private conversation about your join request."
-            >
+            </>
+          ) : (
+            <>
+              <SectionHeading>Chat with the organizer</SectionHeading>
+              <p className="m-0 mb-7 text-sm text-faint">
+                Private conversation about your join request.
+              </p>
               <ChatThread
                 loadMessages={() => getJoinRequestMessages(trip.myJoinRequestId)}
-                sendMessage={(text) =>
-                  sendJoinRequestMessage(trip.myJoinRequestId, text)
-                }
+                sendMessage={(text) => sendJoinRequestMessage(trip.myJoinRequestId, text)}
                 emptyLabel="No messages yet. Introduce yourself to the organizer."
-                height={340}
+                height={380}
               />
-            </Card>
+            </>
           )}
-        </div>
+        </section>
       )}
 
       {/* ---------- PEOPLE ---------- */}
       {activeTab === "people" && (
-        <div className="space-y-6">
-          {trip.role === "organizer" && trip.joinRequests && (
-            <Card title="Join Requests">
-              {trip.joinRequests.length === 0 ? (
-                <p className="text-sm text-gray-400">No pending requests.</p>
-              ) : (
-                trip.joinRequests.map((r) => (
-                  <div key={r._id} className="border rounded-lg p-3 space-y-3">
-                    <div className="flex items-center justify-between">
+        <div className="grid lg:grid-cols-2 gap-10 items-start">
+          {trip.role === "organizer" && (
+            <section className="min-w-0">
+              <SectionHeading>Join requests</SectionHeading>
+              <p className="m-0 mb-[22px] text-sm text-faint">
+                {pendingCount === 0
+                  ? "Nobody is waiting on you."
+                  : `${pendingCount} ${pendingCount === 1 ? "person is" : "people are"} waiting on you.`}
+              </p>
+
+              <div className="flex flex-col gap-4">
+                {trip.joinRequests?.map((r) => (
+                  <article
+                    key={r._id}
+                    className="bg-surface border border-line rounded-2xl p-6"
+                  >
+                    <div className="flex items-center gap-3.5 mb-[18px]">
+                      <Avatar name={r.requester?.name} tone="forest" size={44} />
                       <div>
                         <Link
                           to={`/users/${r.requester?._id}`}
-                          className="font-semibold text-blue-600 hover:underline"
+                          className="text-[17px] font-semibold text-ink hover:text-clay transition-colors"
                         >
                           {r.requester?.name}
                         </Link>
-                        <div>
+                        <div className="text-[13px] text-muted">
                           <RatingBadge
                             rating={r.requester?.participantRating}
                             label="participant"
                           />
                         </div>
                       </div>
-                      <div className="space-x-2">
-                        <button
-                          disabled={actionLoading}
-                          onClick={() =>
-                            runAction(() => decideJoinRequest(r._id, "approved"))
-                          }
-                          className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          disabled={actionLoading}
-                          onClick={() =>
-                            runAction(() => decideJoinRequest(r._id, "rejected"))
-                          }
-                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-300 disabled:opacity-60"
-                        >
-                          Reject
-                        </button>
-                      </div>
                     </div>
 
-                    <details>
-                      <summary className="text-sm text-blue-600 cursor-pointer">
+                    <div className="flex flex-wrap gap-2.5 items-center">
+                      <button
+                        disabled={actionLoading}
+                        onClick={() => runAction(() => decideJoinRequest(r._id, "approved"))}
+                        className="bg-forest text-canvas rounded-full px-[22px] py-2.5 text-sm font-medium hover:bg-forest-deep disabled:opacity-60 transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        disabled={actionLoading}
+                        onClick={() => runAction(() => decideJoinRequest(r._id, "rejected"))}
+                        className="border border-line-bold rounded-full px-5 py-2.5 text-sm hover:border-ink disabled:opacity-60 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+
+                    <details className="mt-4">
+                      <summary className="text-sm text-clay cursor-pointer hover:text-clay-deep">
                         Chat with {r.requester?.name}
                       </summary>
-                      <div className="mt-2">
+                      <div className="mt-3">
                         <ChatThread
                           loadMessages={() => getJoinRequestMessages(r._id)}
                           sendMessage={(text) => sendJoinRequestMessage(r._id, text)}
                           emptyLabel="No messages yet. Ask them anything before deciding."
-                          height={180}
+                          height={200}
                         />
                       </div>
                     </details>
-                  </div>
-                ))
-              )}
-            </Card>
-          )}
-
-          <Card title="Participants" subtitle="Tap anyone to see their trips and reviews.">
-            <Link
-              to={`/users/${trip.organizer?._id}`}
-              className="flex items-center justify-between border rounded-lg p-3 hover:border-gray-400 transition"
-            >
-              <div>
-                <span className="font-semibold text-sm">{trip.organizer?.name}</span>
-                <span className="text-xs text-gray-400"> · organizer</span>
-                <div>
-                  <RatingBadge
-                    rating={trip.organizer?.organizerRating}
-                    label="organizer"
-                  />
-                </div>
-              </div>
-              <span className="text-gray-300">›</span>
-            </Link>
-
-            {trip.members.length === 0 ? (
-              <p className="text-sm text-gray-400">No participants yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {trip.members.map((m) => (
-                  <Link
-                    key={m._id}
-                    to={`/users/${m._id}`}
-                    className="flex items-center justify-between border rounded-lg p-3 hover:border-gray-400 transition"
-                  >
-                    <div>
-                      <span className="font-semibold text-sm">{m.name}</span>
-                      <div>
-                        <RatingBadge
-                          rating={m.participantRating}
-                          label="participant"
-                        />
-                      </div>
-                    </div>
-                    <span className="text-gray-300">›</span>
-                  </Link>
+                  </article>
                 ))}
               </div>
+            </section>
+          )}
+
+          <section className="min-w-0">
+            <SectionHeading>Participants</SectionHeading>
+            <p className="m-0 mb-2 text-sm text-faint">
+              Tap anyone to see their trips and reviews.
+            </p>
+
+            <ul className="list-none m-0 p-0">
+              <li>
+                <Link
+                  to={`/users/${trip.organizer?._id}`}
+                  className="w-full flex items-center gap-3.5 border-t border-line py-[18px] px-1 hover:bg-surface transition-colors"
+                >
+                  <Avatar name={trip.organizer?.name} tone="forest" size={38} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-base font-medium">
+                      {trip.organizer?.name}
+                    </span>
+                    <span className="block text-[13px] text-faint mt-0.5">
+                      Organizer ·{" "}
+                      <RatingBadge
+                        rating={trip.organizer?.organizerRating}
+                        label="organizer"
+                      />
+                    </span>
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9A296" strokeWidth="1.8">
+                    <path d="M9 6l6 6-6 6" />
+                  </svg>
+                </Link>
+              </li>
+
+              {trip.members.map((m) => (
+                <li key={m._id}>
+                  <Link
+                    to={`/users/${m._id}`}
+                    className="w-full flex items-center gap-3.5 border-t border-line py-[18px] px-1 hover:bg-surface transition-colors"
+                  >
+                    <Avatar name={m.name} tone="sand" size={38} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-base font-medium">{m.name}</span>
+                      <span className="block text-[13px] text-faint mt-0.5">
+                        <RatingBadge rating={m.participantRating} label="participant" />
+                      </span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9A296" strokeWidth="1.8">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {trip.members.length === 0 && (
+              <p className="text-[15px] text-faint border-t border-line pt-[18px]">
+                No participants yet.
+              </p>
             )}
-          </Card>
+          </section>
         </div>
       )}
 
       {/* ---------- REVIEWS ---------- */}
       {activeTab === "reviews" && (
-        <div className="space-y-6">
-          <Card title="Rate your trip-mates">
+        <div className="grid lg:grid-cols-2 gap-10 items-start">
+          <section className="min-w-0">
+            <SectionHeading>Rate your trip-mates</SectionHeading>
             {peopleToReview.length === 0 ? (
-              <p className="text-sm text-gray-400">
+              <p className="text-[15px] text-faint">
                 You've rated everyone you can for this trip.
               </p>
             ) : (
-              peopleToReview.map((person) => (
-                <ReviewForm
-                  key={person._id}
-                  personName={person.name}
-                  disabled={actionLoading}
-                  onSubmit={(data) =>
-                    runAction(() =>
-                      createReview(trip._id, { reviewee: person._id, ...data })
-                    )
-                  }
-                />
-              ))
+              <div className="flex flex-col gap-4">
+                {peopleToReview.map((person) => (
+                  <ReviewForm
+                    key={person._id}
+                    personName={person.name}
+                    disabled={actionLoading}
+                    onSubmit={(data) =>
+                      runAction(() =>
+                        createReview(trip._id, { reviewee: person._id, ...data })
+                      )
+                    }
+                  />
+                ))}
+              </div>
             )}
-          </Card>
+          </section>
 
-          {reviews.length > 0 && (
-            <Card title="Reviews from this trip">
-              {reviews.map((r) => (
-                <div key={r._id} className="border rounded-lg p-3 text-sm">
-                  <div className="font-semibold">
-                    {r.reviewer?.name} → {r.reviewee?.name} · {"⭐".repeat(r.score)}
-                  </div>
-                  {r.comment && <div className="text-gray-500">{r.comment}</div>}
-                </div>
-              ))}
-            </Card>
-          )}
+          <section className="min-w-0">
+            <SectionHeading>What people said</SectionHeading>
+            {reviews.length === 0 ? (
+              <div className="border border-dashed border-line-strong rounded-2xl px-[26px] py-[34px] text-center">
+                <p className="m-0 mb-1.5 text-base text-muted">No reviews yet.</p>
+                <p className="m-0 text-sm text-faint">
+                  They appear as people rate each other.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {reviews.map((r) => (
+                  <article
+                    key={r._id}
+                    className="bg-surface border border-line rounded-2xl p-5"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <span className="text-[15px] font-medium">{r.reviewer?.name}</span>
+                      <span className="text-clay text-sm">{"★".repeat(r.score)}</span>
+                    </div>
+                    <div className="text-xs text-faint mb-2">
+                      on {r.reviewee?.name} ·{" "}
+                      {r.direction === "participant_to_organizer"
+                        ? "as organizer"
+                        : "as participant"}
+                    </div>
+                    {r.comment && (
+                      <p className="m-0 text-[15px] leading-[1.6] text-muted">
+                        {r.comment}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       )}
-    </div>
+    </main>
   );
 }

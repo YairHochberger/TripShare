@@ -1,108 +1,99 @@
-// Grey placeholders shaped like the content that's coming, so the page
+// Placeholders shaped like the content that's coming, so the page
 // doesn't jump around once it loads.
 export function Skeleton({ className = "" }) {
-  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />;
-}
-
-export function SkeletonCard({ children, className = "" }) {
-  return (
-    <div className={`bg-white rounded-2xl p-6 shadow space-y-3 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`animate-pulse bg-line rounded ${className}`} />;
 }
 
 export function TripCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow space-y-3">
-      <div className="flex items-start justify-between">
-        <Skeleton className="w-10 h-10 rounded-lg" />
-        <Skeleton className="w-16 h-5 rounded-full" />
+    <div className="bg-surface border border-line rounded-2xl overflow-hidden">
+      <Skeleton className="h-[170px] rounded-none" />
+      <div className="p-[22px] space-y-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-1/2" />
       </div>
-      <Skeleton className="h-5 w-3/4" />
-      <Skeleton className="h-4 w-1/2" />
-      <Skeleton className="h-3 w-1/4" />
-      <Skeleton className="h-4 w-24 mt-4" />
     </div>
   );
 }
 
 export function TripDetailsSkeleton() {
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <SkeletonCard>
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 w-2/3">
-            <Skeleton className="h-7 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-          <Skeleton className="h-5 w-14 rounded-full" />
+    <main className="max-w-[1180px] mx-auto px-8 pt-10 pb-24">
+      <Skeleton className="h-3 w-20 mb-8" />
+
+      <div className="flex flex-wrap gap-8 justify-between items-start">
+        <div className="max-w-[640px] w-full space-y-4">
+          <Skeleton className="h-5 w-32 rounded-full" />
+          <Skeleton className="h-11 w-3/4" />
+          <Skeleton className="h-4 w-52" />
         </div>
-
-        <div className="flex gap-4 pt-1">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-24" />
+        <div className="flex gap-2.5">
+          <Skeleton className="h-11 w-28 rounded-full" />
+          <Skeleton className="h-11 w-36 rounded-full" />
         </div>
+      </div>
 
-        <Skeleton className="h-3 w-40" />
-
-        <div className="flex gap-2 pt-2">
-          <Skeleton className="h-10 w-28 rounded-lg" />
-          <Skeleton className="h-10 w-36 rounded-lg" />
-        </div>
-      </SkeletonCard>
-
-      {/* tab bar */}
-      <div className="bg-white rounded-2xl shadow ring-1 ring-black/5 p-1.5 flex gap-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-[34px] py-[22px] border-y border-line">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1 py-2">
-            <Skeleton className="h-5 w-5 rounded-full" />
-            <Skeleton className="h-3 w-12" />
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-2.5 w-16" />
+            <Skeleton className="h-4 w-24" />
           </div>
         ))}
       </div>
 
-      <SkeletonCard>
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-5/6" />
-      </SkeletonCard>
+      <div className="flex gap-[30px] mt-8 mb-10 border-b border-line">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-3 w-16 my-[18px]" />
+        ))}
+      </div>
 
-      <SkeletonCard>
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-16 w-full rounded-lg" />
-        <Skeleton className="h-16 w-full rounded-lg" />
-      </SkeletonCard>
-    </div>
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-10 items-start">
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-44" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-5/6" />
+          <Skeleton className="h-3 w-2/3" />
+        </div>
+        <Skeleton className="h-64 w-full rounded-[18px]" />
+      </div>
+    </main>
   );
 }
 
 export function ProfileSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <SkeletonCard>
-        <div className="flex items-center gap-4">
-          <Skeleton className="w-16 h-16 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-3 w-28" />
-          </div>
+    <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
+      <div className="flex flex-wrap gap-7 items-center mb-8">
+        <Skeleton className="w-[92px] h-[92px] rounded-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-52" />
+          <Skeleton className="h-3 w-64" />
         </div>
-        <Skeleton className="h-3 w-2/3" />
-        <div className="flex gap-6 pt-2">
-          <Skeleton className="h-8 w-28" />
-          <Skeleton className="h-8 w-28" />
-          <Skeleton className="h-8 w-32" />
-        </div>
-      </SkeletonCard>
+      </div>
 
-      <SkeletonCard>
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-14 w-full rounded-lg" />
-        <Skeleton className="h-14 w-full rounded-lg" />
-      </SkeletonCard>
-    </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-7 border-y border-line mb-14">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-8 w-12" />
+            <Skeleton className="h-2.5 w-20" />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-12">
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-7 w-44" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+        </div>
+      </div>
+    </main>
   );
 }
 

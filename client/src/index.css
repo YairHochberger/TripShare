@@ -1,7 +1,62 @@
 @import "tailwindcss";
 
+/* Design tokens from the TripShare redesign: warm paper ground, forest
+   ink, terracotta accent, serif display type. */
+@theme {
+  --color-canvas: #f4f0e8;
+  --color-surface: #fdfbf7;
+  --color-surface-sunk: #ede7db;
+
+  --color-ink: #16211c;
+  --color-ink-soft: #31403a;
+  --color-muted: #4a574f;
+  --color-faint: #8e9a90;
+  --color-fainter: #a9a296;
+
+  --color-line: #e2dcd0;
+  --color-line-soft: #ede7db;
+  --color-line-strong: #dad3c4;
+  --color-line-bold: #c6bca8;
+
+  --color-clay: #b44a26;
+  --color-clay-deep: #8e3819;
+
+  --color-forest: #2f5646;
+  --color-forest-deep: #254739;
+  --color-forest-mist: #e4ebe2;
+
+  --color-night: #16211c;
+  --color-night-line: #33423a;
+  --color-night-faint: #9fb0a5;
+  --color-night-soft: #c9d3cb;
+
+  --color-map: #dde4da;
+
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
 *,
 ::before,
 ::after {
   box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-canvas);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet inherits the page type and the muted map ground. */
+.leaflet-container {
+  background: var(--color-map);
+  font-family: var(--font-sans);
 }

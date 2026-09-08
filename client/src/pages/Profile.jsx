@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getMe, updateMe } from "../api/users";
+import { AuthContext } from "../context/AuthContext";
 import RatingBadge from "../components/RatingBadge";
 import { ProfileSkeleton } from "../components/Skeleton";
 
@@ -9,7 +11,22 @@ const EXPERIENCE_LEVELS = [
   { value: "advanced", label: "Advanced" },
 ];
 
+const field =
+  "w-full bg-surface border border-line-strong rounded-[10px] px-4 py-3.5 text-base text-ink outline-none focus:border-ink transition-colors";
+
+function FormSection({ title, children }) {
+  return (
+    <section>
+      <h2 className="text-xs tracking-[0.14em] uppercase text-faint m-0 mb-5 pb-3 border-b border-line">
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
 export default function Profile() {
+  const { user } = useContext(AuthContext);
   const [form, setForm] = useState(null);
   const [ratings, setRatings] = useState(null);
   const [error, setError] = useState("");
@@ -40,15 +57,15 @@ export default function Profile() {
     load();
   }, []);
 
-  const updateField = (field, value) => {
-    setForm({ ...form, [field]: value });
+  const updateField = (name, value) => {
+    setForm({ ...form, [name]: value });
     setSaved(false);
   };
 
-  const updateEmergency = (field, value) => {
+  const updateEmergency = (name, value) => {
     setForm({
       ...form,
-      emergencyContact: { ...form.emergencyContact, [field]: value },
+      emergencyContact: { ...form.emergencyContact, [name]: value },
     });
     setSaved(false);
   };
@@ -69,46 +86,69 @@ export default function Profile() {
     }
   };
 
-  if (error && !form) return <p className="text-red-600">{error}</p>;
+  if (error && !form)
+    return <p className="max-w-[1180px] mx-auto px-8 py-14 text-clay-deep">{error}</p>;
   if (!form) return <ProfileSkeleton />;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow space-y-4">
+    <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
+      <div className="flex flex-wrap gap-7 items-center mb-[34px]">
+        <span className="w-[92px] h-[92px] rounded-full bg-forest text-canvas grid place-items-center font-display text-[38px]">
+          {form.name?.[0]?.toUpperCase() || "?"}
+        </span>
         <div>
-          <h2 className="text-2xl font-bold">Your Profile</h2>
-          <div className="flex flex-wrap gap-4 mt-1">
+          <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-2">
+            Your profile
+          </div>
+          <h1 className="font-display text-[44px] leading-none m-0 mb-2">
+            {form.name || "You"}
+          </h1>
+          <div className="flex flex-wrap gap-4">
             <RatingBadge rating={ratings?.organizer} label="organizer" />
             <RatingBadge rating={ratings?.participant} label="participant" />
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-3">
-            <label className="block text-sm text-gray-600">
-              Name
+        {user?.id && (
+          <Link
+            to={`/users/${user.id}`}
+            className="ml-auto border border-line-bold rounded-full px-5 py-3 text-sm hover:border-ink transition-colors"
+          >
+            View public profile
+          </Link>
+        )}
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-12 items-start"
+      >
+        <div className="flex flex-col gap-10 min-w-0">
+          <FormSection title="About you">
+            <label className="block mb-5">
+              <span className="block text-[13px] text-muted mb-2">Name</span>
               <input
-                className="w-full border p-2 rounded mt-1"
+                className={field}
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
               />
             </label>
 
-            <label className="block text-sm text-gray-600">
-              Short bio
+            <label className="block mb-5">
+              <span className="block text-[13px] text-muted mb-2">Short bio</span>
               <textarea
-                className="w-full border p-2 rounded mt-1"
-                rows={3}
+                className={`${field} leading-[1.55] resize-y`}
+                rows={4}
                 placeholder="Tell other travellers a bit about yourself"
                 value={form.bio}
                 onChange={(e) => updateField("bio", e.target.value)}
               />
             </label>
 
-            <label className="block text-sm text-gray-600">
-              Experience level
+            <label className="block max-w-[340px]">
+              <span className="block text-[13px] text-muted mb-2">Experience level</span>
               <select
-                className="w-full border p-2 rounded mt-1"
+                className={field}
                 value={form.experienceLevel}
                 onChange={(e) => updateField("experienceLevel", e.target.value)}
               >
@@ -119,45 +159,59 @@ export default function Profile() {
                 ))}
               </select>
             </label>
+          </FormSection>
+
+          <FormSection title="Emergency contact">
+            <p className="m-0 mb-5 text-sm text-faint max-w-[56ch]">
+              Entered once here and reused for every trip you join. Only you can see it.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <label className="block">
+                <span className="block text-[13px] text-muted mb-2">Contact name</span>
+                <input
+                  className={field}
+                  placeholder="Who to call"
+                  value={form.emergencyContact.name}
+                  onChange={(e) => updateEmergency("name", e.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-[13px] text-muted mb-2">Contact phone</span>
+                <input
+                  className={field}
+                  type="tel"
+                  placeholder="050-0000000"
+                  value={form.emergencyContact.phone}
+                  onChange={(e) => updateEmergency("phone", e.target.value)}
+                />
+              </label>
+            </div>
+          </FormSection>
+        </div>
+
+        <aside className="lg:sticky lg:top-24 bg-surface border border-line rounded-[18px] p-7 min-w-0">
+          <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-4">
+            Save changes
           </div>
 
-          <div className="border-t pt-4 space-y-3">
-            <div>
-              <h3 className="font-semibold">Emergency contact</h3>
-              <p className="text-xs text-gray-500">
-                Entered once here and reused for every trip you join. Only you can see it.
-              </p>
-            </div>
+          <p className="m-0 mb-5 text-sm leading-[1.55] text-faint">
+            Your name and bio are visible to other travellers. Your emergency contact
+            never is.
+          </p>
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Contact name"
-                value={form.emergencyContact.name}
-                onChange={(e) => updateEmergency("name", e.target.value)}
-              />
-              <input
-                className="w-full border p-2 rounded"
-                placeholder="Contact phone"
-                type="tel"
-                value={form.emergencyContact.phone}
-                onChange={(e) => updateEmergency("phone", e.target.value)}
-              />
-            </div>
-          </div>
-
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {saved && <p className="text-green-600 text-sm">Profile saved.</p>}
+          {error && <p className="text-sm text-clay-deep mb-3">{error}</p>}
+          {saved && <p className="text-sm text-forest mb-3">Profile saved.</p>}
 
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+            className="w-full bg-ink text-canvas rounded-full px-5 py-3.5 text-[15px] font-medium hover:bg-clay disabled:opacity-60 transition-colors"
           >
-            {saving ? "Saving..." : "Save profile"}
+            {saving ? "Saving…" : "Save profile"}
           </button>
-        </form>
-      </div>
-    </div>
+        </aside>
+      </form>
+    </main>
   );
 }

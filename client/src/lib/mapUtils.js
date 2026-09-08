@@ -3,38 +3,37 @@ import L from "leaflet";
 // Clean, modern basemap - closer to the look of Google Maps than the
 // default OpenStreetMap tiles. Free and keyless.
 export const TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 export const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-// Green start, red finish, blue in between - the convention people
-// already recognise from mapping apps.
+// Forest start, terracotta finish - the redesign's own palette rather
+// than the usual green/red pins.
 function pinColor(index, total, active) {
-  if (active) return "#f59e0b";
-  if (index === 0) return "#16a34a";
-  if (index === total - 1) return "#dc2626";
-  return "#2563eb";
+  if (active) return "#16211C";
+  if (index === 0) return "#2F5646";
+  if (index === total - 1) return "#B44A26";
+  return "#4A574F";
 }
 
 // Inline styles rather than Tailwind classes: this HTML is injected by
 // Leaflet, outside the components Tailwind scans.
 export function numberedIcon(n, { active = false, index = 0, total = 1 } = {}) {
   const color = pinColor(index, total, active);
-  const w = active ? 38 : 30;
-  const h = active ? 50 : 40;
+  const size = active ? 30 : 22;
 
+  // Small dots with a paper-coloured ring, matching the design.
   return L.divIcon({
     className: "",
-    html: `<div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));">
-      <svg viewBox="0 0 24 32" width="${w}" height="${h}">
-        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12z"
-              fill="${color}" stroke="#ffffff" stroke-width="2"/>
-      </svg>
-      <span style="position:absolute;top:${active ? 7 : 5}px;left:0;width:100%;text-align:center;
-                   color:#fff;font-weight:700;font-size:${active ? 15 : 12}px;line-height:1;">${n}</span>
-    </div>`,
-    iconSize: [w, h],
-    iconAnchor: [w / 2, h],
+    html: `<div style="
+      width:${size}px;height:${size}px;border-radius:999px;
+      background:${color};border:3px solid #FDFBF7;
+      box-shadow:0 1px 4px rgba(0,0,0,.3);
+      color:#FDFBF7;font-size:${active ? 13 : 11}px;font-weight:600;
+      display:flex;align-items:center;justify-content:center;line-height:1;
+    ">${n}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 

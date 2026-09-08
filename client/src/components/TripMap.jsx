@@ -88,7 +88,7 @@ export default function TripMap({ steps, activeIndex, onMarkerClick, height = 46
   if (points.length === 0) {
     return (
       <div
-        className="flex items-center justify-center bg-white border rounded-2xl text-sm text-gray-400 text-center p-6 shadow-sm"
+        className="flex items-center justify-center bg-surface border border-line rounded-[18px] text-[15px] text-faint text-center p-6"
         style={{ height }}
       >
         No travel stops have been pinned on the map for this trip.
@@ -99,9 +99,9 @@ export default function TripMap({ steps, activeIndex, onMarkerClick, height = 46
   const straightLineKm = straightLineTotalKm(points);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4">
       <div
-        className="rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/10"
+        className="rounded-[18px] overflow-hidden border border-line"
         style={{ height }}
       >
         <MapContainer
@@ -115,24 +115,14 @@ export default function TripMap({ steps, activeIndex, onMarkerClick, height = 46
           <ZoomControl position="bottomright" />
 
           {route && (
-            <>
-              {/* Casing under the route, the way navigation apps draw it */}
-              <Polyline
-                positions={route.line}
-                color="#1e40af"
-                weight={9}
-                opacity={0.9}
-                lineCap="round"
-                lineJoin="round"
-              />
-              <Polyline
-                positions={route.line}
-                color="#4285f4"
-                weight={5}
-                lineCap="round"
-                lineJoin="round"
-              />
-            </>
+            <Polyline
+              positions={route.line}
+              color="#B44A26"
+              weight={4}
+              opacity={0.9}
+              lineCap="round"
+              lineJoin="round"
+            />
           )}
 
           {points.map((p, i) => (
@@ -154,37 +144,34 @@ export default function TripMap({ steps, activeIndex, onMarkerClick, height = 46
         </MapContainer>
       </div>
 
-      {/* Trip distance, styled like a directions summary card */}
-      <div className="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-4">
+      {/* Distance summary, in the design's own voice */}
+      <div className="flex flex-wrap items-baseline gap-3.5 bg-surface border border-line rounded-2xl px-6 py-5">
         {points.length < 2 ? (
-          <p className="text-sm text-gray-400">Pin at least two stops to get a distance.</p>
+          <span className="text-[15px] text-faint">
+            Pin at least two stops to get a distance.
+          </span>
         ) : loading ? (
-          <p className="text-sm text-gray-400">Calculating route…</p>
+          <span className="text-[15px] text-faint">Calculating route…</span>
         ) : route ? (
           <>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-blue-600">
-                {route.distanceKm.toFixed(1)} km
-              </span>
-              <span className="text-sm text-gray-500">by road</span>
-            </div>
-            <div className="text-sm text-gray-600 mt-1">
-              🚗 about {formatDuration(route.durationMin)} driving
-            </div>
+            <span className="font-display text-[34px] leading-none">
+              {route.distanceKm.toFixed(1)} km
+            </span>
+            <span className="text-sm text-muted">
+              by road · about {formatDuration(route.durationMin)} driving
+            </span>
           </>
         ) : (
           <>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-blue-600">
-                {straightLineKm.toFixed(1)} km
-              </span>
-              <span className="text-sm text-gray-500">in a straight line</span>
-            </div>
+            <span className="font-display text-[34px] leading-none">
+              {straightLineKm.toFixed(1)} km
+            </span>
+            <span className="text-sm text-muted">in a straight line</span>
           </>
         )}
-
-        {routeError && <p className="text-xs text-orange-600 mt-2">{routeError}</p>}
       </div>
+
+      {routeError && <p className="text-xs text-clay m-0">{routeError}</p>}
     </div>
   );
 }

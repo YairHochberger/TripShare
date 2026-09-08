@@ -1,41 +1,34 @@
-// Switches which section of a trip you're looking at, the way a phone
-// app swaps between screens instead of stacking everything on one page.
+// Underline tabs, in the style of the redesign - no pills, no chrome,
+// just a rule along the bottom and a marker under the active one.
 export default function TripTabs({ tabs, active, onChange }) {
   return (
-    <div className="sticky top-4 z-20">
-      <div className="bg-white rounded-2xl shadow ring-1 ring-black/5 p-1.5 flex gap-1 overflow-x-auto">
-        {tabs.map((tab) => {
-          const isActive = tab.key === active;
+    <nav className="flex gap-[30px] mb-10 border-b border-line overflow-x-auto">
+      {tabs.map((tab) => {
+        const isActive = tab.key === active;
 
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onChange(tab.key)}
-              className={`relative flex-1 min-w-[84px] flex flex-col items-center justify-center gap-0.5
-                          rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                            isActive
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-                          }`}
-            >
-              <span className="text-lg leading-none">{tab.icon}</span>
-              <span>{tab.label}</span>
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onChange(tab.key)}
+            className={`relative py-[18px] px-0.5 text-[15px] whitespace-nowrap flex items-center gap-2 transition-colors ${
+              isActive ? "text-ink" : "text-faint hover:text-ink"
+            }`}
+          >
+            {tab.label}
 
-              {tab.badge > 0 && (
-                <span
-                  className={`absolute top-1 right-2 min-w-[18px] h-[18px] px-1 rounded-full
-                              text-[10px] font-bold flex items-center justify-center ${
-                                isActive ? "bg-white text-blue-600" : "bg-red-500 text-white"
-                              }`}
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+            {tab.badge > 0 && (
+              <span className="min-w-[18px] h-[18px] px-[5px] rounded-full bg-clay text-surface text-[11px] grid place-items-center">
+                {tab.badge}
+              </span>
+            )}
+
+            {isActive && (
+              <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-ink" />
+            )}
+          </button>
+        );
+      })}
+    </nav>
   );
 }

@@ -2,7 +2,11 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 function formatTime(d) {
-  return new Date(d).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleString([], {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatDay(d) {
@@ -13,21 +17,7 @@ function formatDay(d) {
 
   if (date.toDateString() === today.toDateString()) return "Today";
   if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return date.toLocaleDateString();
-}
-
-// Colour the name tag per person so a group thread is easy to follow.
-const NAME_COLORS = [
-  "text-rose-600",
-  "text-emerald-600",
-  "text-violet-600",
-  "text-amber-600",
-  "text-cyan-600",
-];
-function nameColor(id = "") {
-  let sum = 0;
-  for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i);
-  return NAME_COLORS[sum % NAME_COLORS.length];
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "long" });
 }
 
 // Used for both conversations in the app: the trip group chat and the
@@ -36,7 +26,7 @@ export default function ChatThread({
   loadMessages,
   sendMessage,
   emptyLabel = "No messages yet. Say hello!",
-  height = 320,
+  height = 380,
   pollMs = 8000,
 }) {
   const { user } = useContext(AuthContext);
@@ -91,21 +81,21 @@ export default function ChatThread({
   };
 
   return (
-    <div className="space-y-2">
+    <div>
       <div
         ref={scrollRef}
-        className="overflow-y-auto rounded-2xl bg-slate-100 border border-slate-200 p-3 space-y-1"
+        className="overflow-y-auto flex flex-col gap-5 mb-[26px] pr-1"
         style={{ height }}
       >
         {!loaded ? (
-          <div className="space-y-3">
-            <div className="animate-pulse bg-white/70 h-10 w-2/5 rounded-2xl" />
-            <div className="animate-pulse bg-blue-200 h-10 w-1/2 rounded-2xl ml-auto" />
-            <div className="animate-pulse bg-white/70 h-10 w-1/3 rounded-2xl" />
+          <div className="flex flex-col gap-4">
+            <div className="animate-pulse bg-surface h-12 w-2/5 rounded-2xl" />
+            <div className="animate-pulse bg-surface-sunk h-12 w-1/2 rounded-2xl ml-auto" />
+            <div className="animate-pulse bg-surface h-12 w-1/3 rounded-2xl" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-sm text-gray-400">{emptyLabel}</p>
+          <div className="h-full grid place-items-center">
+            <p className="text-[15px] text-faint">{emptyLabel}</p>
           </div>
         ) : (
           messages.map((m, i) => {
@@ -118,69 +108,58 @@ export default function ChatThread({
               new Date(prev.createdAt).toDateString() !==
                 new Date(m.createdAt).toDateString();
 
-            // Group runs from the same person so only the first shows a name.
-            const startsRun =
-              newDay || !prev || String(prev.sender?._id) !== senderId;
-
             return (
               <div key={m._id}>
                 {newDay && (
-                  <div className="flex justify-center my-3">
-                    <span className="bg-slate-200 text-slate-600 text-[11px] font-medium px-3 py-1 rounded-full">
+                  <div className="flex justify-center mb-5">
+                    <span className="text-[11px] tracking-[0.12em] uppercase text-faint">
                       {formatDay(m.createdAt)}
                     </span>
                   </div>
                 )}
 
-                <div
-                  className={`flex ${mine ? "justify-end" : "justify-start"} ${
-                    startsRun ? "mt-2" : "mt-0.5"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[78%] px-3 py-2 shadow-sm ${
-                      mine
-                        ? `bg-blue-600 text-white rounded-2xl ${
-                            startsRun ? "rounded-tr-md" : ""
-                          }`
-                        : `bg-white text-gray-800 rounded-2xl ${
-                            startsRun ? "rounded-tl-md" : ""
-                          }`
-                    }`}
-                  >
-                    {!mine && startsRun && (
-                      <div
-                        className={`text-xs font-semibold mb-0.5 ${nameColor(senderId)}`}
-                      >
-                        {m.sender?.name}
+                {mine ? (
+                  <div className="flex justify-end">
+                    <div className="max-w-[74%] bg-ink text-canvas rounded-[16px_16px_4px_16px] px-[18px] py-3.5">
+                      <p className="m-0 text-[15px] leading-[1.55] whitespace-pre-wrap break-words">
+                        {m.text}
+                      </p>
+                      <div className="text-[11px] text-night-faint mt-2 text-right">
+                        {formatTime(m.createdAt)}
                       </div>
-                    )}
-
-                    <div className="text-sm whitespace-pre-wrap break-words">
-                      {m.text}
-                    </div>
-
-                    <div
-                      className={`text-[10px] mt-1 text-right ${
-                        mine ? "text-blue-100" : "text-gray-400"
-                      }`}
-                    >
-                      {formatTime(m.createdAt)}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <span className="w-[34px] h-[34px] shrink-0 rounded-full bg-line text-muted grid place-items-center text-[13px]">
+                      {m.sender?.name?.[0]?.toUpperCase() || "?"}
+                    </span>
+                    <div className="max-w-[74%] bg-surface border border-line rounded-[16px_16px_16px_4px] px-[18px] py-3.5">
+                      <div className="text-xs text-clay mb-1.5">{m.sender?.name}</div>
+                      <p className="m-0 text-[15px] leading-[1.55] text-ink-soft whitespace-pre-wrap break-words">
+                        {m.text}
+                      </p>
+                      <div className="text-[11px] text-fainter mt-2">
+                        {formatTime(m.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })
         )}
       </div>
 
-      {error && <p className="text-red-600 text-xs">{error}</p>}
+      {error && <p className="text-clay-deep text-xs mb-2">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+      <form
+        onSubmit={handleSubmit}
+        className="flex gap-2.5 items-center bg-surface border border-line rounded-full p-2 pl-[22px]"
+      >
         <input
-          className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          placeholder="Message…"
+          className="flex-1 border-none bg-transparent outline-none text-[15px] text-ink py-2.5"
+          placeholder="Write to the group…"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -188,11 +167,10 @@ export default function ChatThread({
           type="submit"
           disabled={sending || !text.trim()}
           aria-label="Send message"
-          className="w-10 h-10 shrink-0 rounded-full bg-blue-600 text-white flex items-center justify-center
-                     hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition"
+          className="w-[42px] h-[42px] shrink-0 rounded-full bg-ink text-canvas grid place-items-center hover:bg-clay disabled:opacity-40 disabled:hover:bg-ink transition-colors"
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 12h15M12 5l7 7-7 7" />
           </svg>
         </button>
       </form>

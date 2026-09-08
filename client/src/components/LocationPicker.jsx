@@ -26,8 +26,13 @@ export default function LocationPicker({ steps, activeIndex, onPick, height = 30
   const isPicking = activeIndex !== null && activeIndex !== undefined;
 
   return (
-    <div className="space-y-2">
-      <div className="rounded-xl overflow-hidden border" style={{ height }}>
+    <div className="flex flex-col gap-2.5">
+      <div
+        className={`rounded-[14px] overflow-hidden border transition-colors ${
+          isPicking ? "border-ink" : "border-line"
+        }`}
+        style={{ height }}
+      >
         <MapContainer
           center={DEFAULT_CENTER}
           zoom={DEFAULT_ZOOM}
@@ -52,7 +57,7 @@ export default function LocationPicker({ steps, activeIndex, onPick, height = 30
         </MapContainer>
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className={`text-xs m-0 ${isPicking ? "text-clay" : "text-faint"}`}>
         {isPicking
           ? `Click the map to place stop ${activeIndex + 1}.`
           : "Press “Set on map” on a travel step, then click the map to place it."}

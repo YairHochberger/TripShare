@@ -28,12 +28,12 @@ const TRAVEL_MODES = [
   { value: "other", label: "Other" },
 ];
 
-const STATUS_STYLES = {
-  pending: "bg-blue-100 text-blue-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-  tied: "bg-amber-100 text-amber-700",
-  cancelled: "bg-gray-200 text-gray-600",
+const STATUS_TONE = {
+  pending: "text-muted bg-surface-sunk",
+  approved: "text-forest bg-forest-mist",
+  rejected: "text-clay-deep bg-clay/10",
+  tied: "text-clay bg-clay/10",
+  cancelled: "text-faint bg-surface-sunk",
 };
 
 const STATUS_LABELS = {
@@ -43,6 +43,9 @@ const STATUS_LABELS = {
   tied: "Tied — organizer decides",
   cancelled: "Withdrawn",
 };
+
+const inputClass =
+  "w-full bg-surface border border-line-strong rounded-[10px] px-4 py-3.5 text-base text-ink outline-none focus:border-ink transition-colors";
 
 function timeLeft(closesAt) {
   const ms = new Date(closesAt).getTime() - Date.now();
@@ -121,275 +124,300 @@ export default function ProposedChanges({ trip, onApplied }) {
   };
 
   return (
-    <div className="space-y-3">
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+    <div className="flex flex-col gap-4">
+      {error && <p className="text-sm text-clay-deep m-0">{error}</p>}
 
-      {isOrganizer && (
-        <div>
-          {!showForm ? (
-            <button
-              onClick={() => setShowForm(true)}
-              className="text-sm text-blue-600 font-semibold"
-            >
-              + Propose a change
-            </button>
-          ) : (
-            <form onSubmit={submitProposal} className="border rounded-xl p-3 space-y-2">
-              <select
-                className="w-full border p-2 rounded"
-                value={form.field}
+      {isOrganizer && !showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="self-start text-[15px] text-clay hover:text-clay-deep transition-colors"
+        >
+          Propose a change
+        </button>
+      )}
+
+      {isOrganizer && showForm && (
+        <form
+          onSubmit={submitProposal}
+          className="bg-surface border border-line rounded-2xl p-6 flex flex-col gap-3.5"
+        >
+          <select
+            className={inputClass}
+            value={form.field}
+            onChange={(e) => setForm({ ...form, field: e.target.value, newValue: "" })}
+          >
+            {FIELD_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+
+          {!["none", "destination"].includes(selectedField?.type) && (
+            <input
+              className={inputClass}
+              type={selectedField.type}
+              placeholder="New value"
+              value={form.newValue}
+              onChange={(e) => setForm({ ...form, newValue: e.target.value })}
+            />
+          )}
+
+          {selectedField?.type === "destination" && (
+            <div className="flex flex-col gap-3">
+              <input
+                className={inputClass}
+                placeholder="Destination name"
+                value={destination.location}
                 onChange={(e) =>
-                  setForm({ ...form, field: e.target.value, newValue: "" })
+                  setDestination({ ...destination, location: e.target.value })
                 }
+              />
+              <input
+                className={inputClass}
+                placeholder="What happens there (optional)"
+                value={destination.description}
+                onChange={(e) =>
+                  setDestination({ ...destination, description: e.target.value })
+                }
+              />
+              <select
+                className={inputClass}
+                value={destination.mode}
+                onChange={(e) => setDestination({ ...destination, mode: e.target.value })}
               >
-                {FIELD_OPTIONS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
+                {TRAVEL_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
                   </option>
                 ))}
               </select>
 
-              {!["none", "destination"].includes(selectedField?.type) && (
-                <input
-                  className="w-full border p-2 rounded"
-                  type={selectedField.type}
-                  placeholder="New value"
-                  value={form.newValue}
-                  onChange={(e) => setForm({ ...form, newValue: e.target.value })}
-                />
-              )}
-
-              {selectedField?.type === "destination" && (
-                <div className="space-y-2">
-                  <input
-                    className="w-full border p-2 rounded"
-                    placeholder="Destination name"
-                    value={destination.location}
-                    onChange={(e) =>
-                      setDestination({ ...destination, location: e.target.value })
-                    }
-                  />
-                  <input
-                    className="w-full border p-2 rounded"
-                    placeholder="What happens there (optional)"
-                    value={destination.description}
-                    onChange={(e) =>
-                      setDestination({ ...destination, description: e.target.value })
-                    }
-                  />
-                  <select
-                    className="w-full border p-2 rounded"
-                    value={destination.mode}
-                    onChange={(e) =>
-                      setDestination({ ...destination, mode: e.target.value })
-                    }
-                  >
-                    {TRAVEL_MODES.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      className="text-sm text-blue-600 font-semibold"
-                      onClick={() => setPicking(!picking)}
-                    >
-                      {picking ? "Cancel" : "Set on map"}
-                    </button>
-                    {typeof destination.lat === "number" ? (
-                      <span className="text-xs text-gray-500">
-                        📍 {destination.lat.toFixed(4)}, {destination.lng.toFixed(4)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not placed yet</span>
-                    )}
-                  </div>
-
-                  <LocationPicker
-                    steps={[
-                      ...(trip.travelPlan || []),
-                      ...(typeof destination.lat === "number" ? [destination] : []),
-                    ]}
-                    activeIndex={picking ? (trip.travelPlan?.length ?? 0) : null}
-                    onPick={(lat, lng) => {
-                      setDestination({ ...destination, lat, lng });
-                      setPicking(false);
-                    }}
-                    height={240}
-                  />
-
-                  <p className="text-xs text-gray-500">
-                    If the group approves, this stop is added to the Route tab and the
-                    distance is recalculated.
-                  </p>
-                </div>
-              )}
-
-              <textarea
-                className="w-full border p-2 rounded"
-                rows={2}
-                placeholder={
-                  form.field === "other"
-                    ? "Describe what you want to change, add or remove"
-                    : "Why this change? (optional)"
-                }
-                value={form.note}
-                onChange={(e) => setForm({ ...form, note: e.target.value })}
-              />
-
-              <label className="block text-sm text-gray-500">
-                Voting open for
-                <select
-                  className="w-full border p-2 rounded mt-1"
-                  value={form.votingDays}
-                  onChange={(e) =>
-                    setForm({ ...form, votingDays: Number(e.target.value) })
-                  }
-                >
-                  <option value={1}>1 day</option>
-                  <option value={3}>3 days</option>
-                  <option value={7}>7 days</option>
-                </select>
-              </label>
-
-              <p className="text-xs text-gray-500">
-                Participants who don't vote count as agreeing. If it ties, you decide.
-              </p>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-60"
-                >
-                  Send to the group
-                </button>
+              <div className="flex items-center gap-3.5">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="text-sm text-gray-500"
+                  className="text-sm text-clay hover:text-clay-deep transition-colors"
+                  onClick={() => setPicking(!picking)}
                 >
-                  Cancel
+                  {picking ? "Cancel" : "Set on map"}
                 </button>
+                {typeof destination.lat === "number" ? (
+                  <span className="text-xs text-muted">
+                    {destination.lat.toFixed(4)}, {destination.lng.toFixed(4)}
+                  </span>
+                ) : (
+                  <span className="text-xs text-faint">Not placed yet</span>
+                )}
               </div>
-            </form>
+
+              <LocationPicker
+                steps={[
+                  ...(trip.travelPlan || []),
+                  ...(typeof destination.lat === "number" ? [destination] : []),
+                ]}
+                activeIndex={picking ? (trip.travelPlan?.length ?? 0) : null}
+                onPick={(lat, lng) => {
+                  setDestination({ ...destination, lat, lng });
+                  setPicking(false);
+                }}
+                height={240}
+              />
+
+              <p className="text-xs text-faint m-0">
+                If the group approves, this stop is added to the Route tab and the
+                distance is recalculated.
+              </p>
+            </div>
           )}
-        </div>
+
+          <textarea
+            className={`${inputClass} resize-y leading-[1.55]`}
+            rows={2}
+            placeholder={
+              form.field === "other"
+                ? "Describe what you want to change, add or remove"
+                : "Why this change? (optional)"
+            }
+            value={form.note}
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+          />
+
+          <label className="block text-[13px] text-muted">
+            Voting open for
+            <select
+              className={`${inputClass} mt-2`}
+              value={form.votingDays}
+              onChange={(e) => setForm({ ...form, votingDays: Number(e.target.value) })}
+            >
+              <option value={1}>1 day</option>
+              <option value={3}>3 days</option>
+              <option value={7}>7 days</option>
+            </select>
+          </label>
+
+          <p className="text-xs text-faint m-0">
+            Participants who don't vote count as agreeing. If it ties, you decide.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={busy}
+              className="bg-ink text-canvas rounded-full px-5 py-3 text-sm font-medium hover:bg-clay disabled:opacity-60 transition-colors"
+            >
+              Send to the group
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-sm text-faint hover:text-ink transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
       {proposals.length === 0 ? (
-        <p className="text-sm text-gray-400">
+        <p className="text-[15px] text-faint m-0">
           No changes have been proposed for this trip.
         </p>
       ) : (
-        proposals.map((p) => (
-          <div key={p._id} className="border rounded-xl p-3 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="font-semibold text-sm">{p.fieldLabel}</div>
-              <span
-                className={`text-[11px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${
-                  STATUS_STYLES[p.status]
-                }`}
-              >
-                {STATUS_LABELS[p.status]}
-              </span>
-            </div>
+        proposals.map((p) => {
+          const total = p.counts.eligible || 1;
+          const forPct = Math.round((p.counts.agrees / total) * 100);
 
-            {!["other", "addDestination"].includes(p.field) && (
-              <div className="text-sm flex flex-wrap items-center gap-2">
-                <span className="line-through text-gray-400">{p.oldValue || "—"}</span>
-                <span className="text-gray-400">→</span>
-                <span className="font-semibold text-gray-800">{p.newValue}</span>
-              </div>
-            )}
-
-            {p.field === "addDestination" && p.payload && (
-              <div className="text-sm border-l-2 border-blue-400 pl-2">
-                <div className="font-semibold">📍 {p.payload.location}</div>
-                {p.payload.description && (
-                  <div className="text-gray-500">{p.payload.description}</div>
-                )}
-                <div className="text-xs text-gray-400">
-                  {p.status === "approved"
-                    ? "Added to the route"
-                    : "Will be added to the route if approved"}
-                </div>
-              </div>
-            )}
-
-            {p.note && <p className="text-sm text-gray-600">{p.note}</p>}
-
-            <div className="text-xs text-gray-500">
-              {p.counts.agrees} for · {p.counts.objections} against
-              {p.counts.silent > 0 && ` · ${p.counts.silent} haven't voted (counts as for)`}
-              {p.status === "pending" && ` · ${timeLeft(p.closesAt)}`}
-            </div>
-
-            {/* Participants vote */}
-            {p.status === "pending" && trip.role === "participant" && (
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={busy}
-                  onClick={() => run(() => voteOnProposal(p._id, true))}
-                  className={`px-3 py-1 rounded-lg text-sm disabled:opacity-60 ${
-                    p.myVote === true
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          return (
+            <article
+              key={p._id}
+              className="bg-surface border border-line rounded-2xl p-6"
+            >
+              <div className="flex flex-wrap items-center gap-3 justify-between mb-4">
+                <h3 className="text-[15px] font-semibold m-0 tracking-[0.01em]">
+                  {p.fieldLabel}
+                </h3>
+                <span
+                  className={`text-[11px] tracking-[0.12em] uppercase px-[11px] py-1.5 rounded-full ${
+                    STATUS_TONE[p.status]
                   }`}
                 >
-                  Agree
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() => run(() => voteOnProposal(p._id, false))}
-                  className={`px-3 py-1 rounded-lg text-sm disabled:opacity-60 ${
-                    p.myVote === false
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Object
-                </button>
-                {p.myVote !== null && (
-                  <span className="text-xs text-gray-400">
-                    You {p.myVote ? "agreed" : "objected"} — you can change this
+                  {STATUS_LABELS[p.status]}
+                </span>
+              </div>
+
+              {!["other", "addDestination"].includes(p.field) && (
+                <div className="flex items-baseline gap-3.5 mb-3.5 flex-wrap">
+                  <span className="font-display text-[28px] text-fainter line-through">
+                    {p.oldValue || "—"}
                   </span>
-                )}
-              </div>
-            )}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8E9A90" strokeWidth="1.6">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                  <span className="font-display text-[32px]">{p.newValue}</span>
+                </div>
+              )}
 
-            {/* Organizer breaks a tie, or withdraws their proposal */}
-            {isOrganizer && ["pending", "tied"].includes(p.status) && (
-              <div className="flex items-center gap-2">
-                {p.status === "tied" && (
+              {p.field === "addDestination" && p.payload && (
+                <div className="border-l-2 border-clay pl-3 mb-3.5">
+                  <div className="text-[17px] font-semibold">{p.payload.location}</div>
+                  {p.payload.description && (
+                    <div className="text-[15px] text-muted">{p.payload.description}</div>
+                  )}
+                  <div className="text-xs text-faint mt-1">
+                    {p.status === "approved"
+                      ? "Added to the route"
+                      : "Will be added to the route if approved"}
+                  </div>
+                </div>
+              )}
+
+              {p.note && (
+                <p className="m-0 mb-5 text-[15px] leading-[1.6] text-muted">{p.note}</p>
+              )}
+
+              <div className="flex items-center gap-3.5">
+                <div className="flex-1 h-1.5 rounded-full bg-surface-sunk overflow-hidden">
+                  <div
+                    className="h-full bg-forest transition-all"
+                    style={{ width: `${forPct}%` }}
+                  />
+                </div>
+                <span className="text-[13px] text-muted whitespace-nowrap">
+                  {p.counts.agrees} for · {p.counts.objections} against
+                </span>
+              </div>
+
+              {p.status === "pending" && (
+                <div className="text-xs text-faint mt-2">
+                  {timeLeft(p.closesAt)}
+                  {p.counts.silent > 0 &&
+                    ` · ${p.counts.silent} haven't voted (counts as for)`}
+                </div>
+              )}
+
+              {/* Participants vote */}
+              {p.status === "pending" && trip.role === "participant" && (
+                <div className="flex items-center gap-2.5 mt-4">
                   <button
                     disabled={busy}
-                    onClick={() => run(() => decideProposal(p._id, "approved"))}
-                    className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700 disabled:opacity-60"
+                    onClick={() => run(() => voteOnProposal(p._id, true))}
+                    className={`rounded-full px-5 py-2.5 text-sm transition-colors disabled:opacity-60 ${
+                      p.myVote === true
+                        ? "bg-forest text-canvas"
+                        : "border border-line-bold hover:border-ink"
+                    }`}
                   >
-                    Approve it
+                    Agree
                   </button>
-                )}
-                <button
-                  disabled={busy}
-                  onClick={() => run(() => decideProposal(p._id, "cancelled"))}
-                  className="bg-gray-100 text-gray-700 px-3 py-1 rounded-lg text-sm hover:bg-gray-200 disabled:opacity-60"
-                >
-                  Withdraw
-                </button>
-              </div>
-            )}
+                  <button
+                    disabled={busy}
+                    onClick={() => run(() => voteOnProposal(p._id, false))}
+                    className={`rounded-full px-5 py-2.5 text-sm transition-colors disabled:opacity-60 ${
+                      p.myVote === false
+                        ? "bg-clay text-canvas"
+                        : "border border-line-bold hover:border-ink"
+                    }`}
+                  >
+                    Object
+                  </button>
+                  {p.myVote !== null && (
+                    <span className="text-xs text-faint">
+                      You {p.myVote ? "agreed" : "objected"} — you can change this
+                    </span>
+                  )}
+                </div>
+              )}
 
-            {p.status === "approved" && p.field === "other" && (
-              <p className="text-xs text-green-700">
-                The group agreed — the organizer applies this one by hand.
-              </p>
-            )}
-          </div>
-        ))
+              {/* Organizer breaks a tie, or withdraws their proposal */}
+              {isOrganizer && ["pending", "tied"].includes(p.status) && (
+                <div className="flex items-center gap-2.5 mt-4">
+                  {p.status === "tied" && (
+                    <button
+                      disabled={busy}
+                      onClick={() => run(() => decideProposal(p._id, "approved"))}
+                      className="bg-forest text-canvas rounded-full px-5 py-2.5 text-sm font-medium hover:bg-forest-deep disabled:opacity-60 transition-colors"
+                    >
+                      Approve it
+                    </button>
+                  )}
+                  <button
+                    disabled={busy}
+                    onClick={() => run(() => decideProposal(p._id, "cancelled"))}
+                    className="border border-line-bold rounded-full px-5 py-2.5 text-sm hover:border-ink disabled:opacity-60 transition-colors"
+                  >
+                    Withdraw
+                  </button>
+                </div>
+              )}
+
+              {p.status === "approved" && p.field === "other" && (
+                <p className="text-xs text-forest mt-3 mb-0">
+                  The group agreed — the organizer applies this one by hand.
+                </p>
+              )}
+            </article>
+          );
+        })
       )}
     </div>
   );
