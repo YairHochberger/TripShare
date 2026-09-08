@@ -235,6 +235,8 @@ export default function TripDetails() {
 
   const tabs = [
     { key: "overview", label: "Overview" },
+    // Proposals are only readable by people on the trip.
+    ...(trip.role ? [{ key: "proposals", label: "Proposals" }] : []),
     { key: "route", label: "Route" },
     ...(canChat ? [{ key: "chat", label: "Chat" }] : []),
     { key: "people", label: "People", badge: pendingCount },
@@ -441,16 +443,6 @@ export default function TripDetails() {
               </p>
               <TripWeather trip={trip} />
             </section>
-
-            {trip.role && (
-              <section>
-                <SectionHeading>Proposed changes</SectionHeading>
-                <p className="m-0 mb-5 text-sm text-faint">
-                  What the organizer wants to change, and where the group stands.
-                </p>
-                <ProposedChanges trip={trip} onApplied={loadTrip} />
-              </section>
-            )}
 
             <section>
               <SectionHeading>Lodging plan</SectionHeading>
@@ -662,6 +654,19 @@ export default function TripDetails() {
             </div>
           </aside>
         </div>
+      )}
+
+      {/* ---------- PROPOSALS ---------- */}
+      {activeTab === "proposals" && (
+        <section className="max-w-[760px]">
+          <SectionHeading>Proposed changes</SectionHeading>
+          <p className="m-0 mb-7 text-sm text-faint">
+            {trip.role === "organizer"
+              ? "Ask the group before changing anything they already agreed to. Anyone who doesn't vote counts as agreeing, and you break a tie."
+              : "Changes the organizer wants to make. Not voting counts as agreeing, so speak up if you disagree."}
+          </p>
+          <ProposedChanges trip={trip} onApplied={loadTrip} />
+        </section>
       )}
 
       {/* ---------- ROUTE ---------- */}
