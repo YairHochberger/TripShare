@@ -143,8 +143,7 @@ dist
 # Vite files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-<<<<<<< HEAD
 .vite/
-=======
-.vite/
->>>>>>> 57ae87abbe8f7e730ad894c7a20fcca09a20b85e
+
+# Uploaded trip photos
+server/uploads/

@@ -9,6 +9,7 @@ import TripDetails from "./pages/TripDetails";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
 import People from "./pages/People";
+import TripRecap from "./pages/TripRecap";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -70,6 +71,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <UserProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/trip/:id/recap"
+          element={
+            <ProtectedRoute>
+              <TripRecap />
             </ProtectedRoute>
           }
         />

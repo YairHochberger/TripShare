@@ -22,6 +22,12 @@ const {
   createProposal,
   getProposals,
 } = require("../controllers/changeProposalController");
+const {
+  getRecap,
+  addPhoto,
+  deletePhoto,
+} = require("../controllers/recapController");
+const { upload } = require("../middleware/uploadMiddleware");
 
 router.get("/", auth, getTrips);
 router.post("/", auth, createTrip);
@@ -40,5 +46,9 @@ router.post("/:id/messages", auth, sendTripMessage);
 
 router.get("/:id/proposals", auth, getProposals);
 router.post("/:id/proposals", auth, createProposal);
+
+router.get("/:id/recap", auth, getRecap);
+router.post("/:id/photos", auth, upload.single("photo"), addPhoto);
+router.delete("/:id/photos/:photoId", auth, deletePhoto);
 
 module.exports = router;

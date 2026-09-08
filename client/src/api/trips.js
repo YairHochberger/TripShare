@@ -26,6 +26,16 @@ export const voteOnProposal = (proposalId, agree) =>
 export const decideProposal = (proposalId, decision) =>
   api.patch(`/proposals/${proposalId}`, { decision });
 
+export const getRecap = (tripId) => api.get(`/trips/${tripId}/recap`);
+export const addTripPhoto = (tripId, file, caption) => {
+  const body = new FormData();
+  body.append("photo", file);
+  if (caption) body.append("caption", caption);
+  return api.post(`/trips/${tripId}/photos`, body);
+};
+export const deleteTripPhoto = (tripId, photoId) =>
+  api.delete(`/trips/${tripId}/photos/${photoId}`);
+
 export const getTripMessages = (tripId) => api.get(`/trips/${tripId}/messages`);
 export const sendTripMessage = (tripId, text) =>
   api.post(`/trips/${tripId}/messages`, { text });

@@ -339,6 +339,15 @@ export default function TripDetails() {
             </>
           )}
 
+          {isFinished && trip.role && (
+            <Link
+              to={`/trip/${trip._id}/recap`}
+              className="bg-ink text-canvas rounded-full px-6 py-3 text-sm font-medium hover:bg-clay transition-colors"
+            >
+              See the recap
+            </Link>
+          )}
+
           {trip.role === "participant" && !isFinished && (
             <>
               <span className="inline-flex items-center gap-2 text-sm text-forest bg-forest-mist rounded-full px-5 py-3">
