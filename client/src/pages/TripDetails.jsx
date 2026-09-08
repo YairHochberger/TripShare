@@ -20,6 +20,7 @@ import TripMap from "../components/TripMap";
 import TripTabs from "../components/TripTabs";
 import ProposedChanges from "../components/ProposedChanges";
 import TripWeather from "../components/TripWeather";
+import AppliedChanges from "../components/AppliedChanges";
 import { TripDetailsSkeleton } from "../components/Skeleton";
 
 const TYPE_LABELS = {
@@ -237,6 +238,7 @@ export default function TripDetails() {
     { key: "overview", label: "Overview" },
     // Proposals are only readable by people on the trip.
     ...(trip.role ? [{ key: "proposals", label: "Proposals" }] : []),
+    { key: "lodging", label: "Lodging" },
     { key: "route", label: "Route" },
     ...(canChat ? [{ key: "chat", label: "Chat" }] : []),
     { key: "people", label: "People", badge: pendingCount },
@@ -444,60 +446,16 @@ export default function TripDetails() {
               <TripWeather trip={trip} />
             </section>
 
-            <section>
-              <SectionHeading>Lodging plan</SectionHeading>
-              {!trip.lodgingPlan?.length ? (
-                <p className="text-[15px] text-faint m-0">No lodging plan added.</p>
-              ) : (
-                <ol className="list-none m-0 p-0">
-                  {trip.lodgingPlan.map((night, i) => (
-                    <li
-                      key={i}
-                      className="grid grid-cols-[84px_minmax(0,1fr)] sm:grid-cols-[104px_minmax(0,1fr)] gap-[22px] py-[22px] border-t border-line"
-                    >
-                      <div>
-                        <div className="font-display text-[22px] leading-[1.1]">
-                          Night {i + 1}
-                        </div>
-                        {night.date && (
-                          <div className="text-xs text-faint tracking-[0.08em] uppercase mt-1">
-                            {shortDate(night.date)}
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
-                          <h3 className="text-base font-semibold m-0">
-                            {night.location || "Location to be confirmed"}
-                          </h3>
-                          <span className="text-[11px] tracking-[0.12em] uppercase text-muted bg-surface-sunk px-2.5 py-[5px] rounded-full">
-                            {LODGING_LABELS[night.type] || "Other"}
-                          </span>
-                        </div>
-
-                        {night.description && (
-                          <p className="m-0 mb-2.5 text-[15px] leading-[1.55] text-muted">
-                            {night.description}
-                          </p>
-                        )}
-
-                        {safeUrl(night.bookingUrl) && (
-                          <a
-                            href={safeUrl(night.bookingUrl)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-clay hover:text-clay-deep text-[15px]"
-                          >
-                            View the booking ↗
-                          </a>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </section>
+            {trip.role && (
+              <section>
+                <SectionHeading>What's changed</SectionHeading>
+                <p className="m-0 mb-4 text-sm text-faint">
+                  Changes the group has already agreed to. Anything still being voted on
+                  is in Proposals.
+                </p>
+                <AppliedChanges trip={trip} />
+              </section>
+            )}
           </div>
 
           <aside className="lg:sticky lg:top-24 flex flex-col gap-[18px] min-w-0">
@@ -654,6 +612,68 @@ export default function TripDetails() {
             </div>
           </aside>
         </div>
+      )}
+
+      {/* ---------- LODGING ---------- */}
+      {activeTab === "lodging" && (
+        <section className="max-w-[760px]">
+          <SectionHeading>Lodging plan</SectionHeading>
+          <p className="m-0 mb-7 text-sm text-faint">
+            Where the group sleeps each night.
+          </p>
+
+          {!trip.lodgingPlan?.length ? (
+            <p className="text-[15px] text-faint m-0">No lodging plan added.</p>
+          ) : (
+                <ol className="list-none m-0 p-0">
+                  {trip.lodgingPlan.map((night, i) => (
+                    <li
+                      key={i}
+                      className="grid grid-cols-[84px_minmax(0,1fr)] sm:grid-cols-[104px_minmax(0,1fr)] gap-[22px] py-[22px] border-t border-line"
+                    >
+                      <div>
+                        <div className="font-display text-[22px] leading-[1.1]">
+                          Night {i + 1}
+                        </div>
+                        {night.date && (
+                          <div className="text-xs text-faint tracking-[0.08em] uppercase mt-1">
+                            {shortDate(night.date)}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                          <h3 className="text-base font-semibold m-0">
+                            {night.location || "Location to be confirmed"}
+                          </h3>
+                          <span className="text-[11px] tracking-[0.12em] uppercase text-muted bg-surface-sunk px-2.5 py-[5px] rounded-full">
+                            {LODGING_LABELS[night.type] || "Other"}
+                          </span>
+                        </div>
+
+                        {night.description && (
+                          <p className="m-0 mb-2.5 text-[15px] leading-[1.55] text-muted">
+                            {night.description}
+                          </p>
+                        )}
+
+                        {safeUrl(night.bookingUrl) && (
+                          <a
+                            href={safeUrl(night.bookingUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-clay hover:text-clay-deep text-[15px]"
+                          >
+                            View the booking ↗
+                          </a>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+        </section>
       )}
 
       {/* ---------- PROPOSALS ---------- */}
