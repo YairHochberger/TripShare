@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getUser, getUserTrips, getUserReviews } from "../api/users";
+import {
+  getUser,
+  getUserTrips,
+  getUserReviews,
+  getFollowState,
+  followUser,
+  unfollowUser,
+} from "../api/users";
+import { AuthContext } from "../context/AuthContext";
+import { useContext } from "react";
 import { ProfileSkeleton } from "../components/Skeleton";
 
 const EXPERIENCE_LABELS = {
@@ -47,10 +56,30 @@ function Stat({ value, label, muted }) {
 
 export default function UserProfile() {
   const { id } = useParams();
+  const { user: me } = useContext(AuthContext);
   const [user, setUser] = useState(null);
   const [trips, setTrips] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState("");
+  const [follow, setFollow] = useState({ following: false, followerCount: 0 });
+  const [followBusy, setFollowBusy] = useState(false);
+
+  const isMe = String(me?.id || "") === String(id);
+
+  const toggleFollow = async () => {
+    setFollowBusy(true);
+    try {
+      const res = follow.following ? await unfollowUser(id) : await followUser(id);
+      setFollow({
+        following: res.data.following,
+        followerCount: follow.followerCount + (res.data.following ? 1 : -1),
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Couldn't update follow.");
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -66,9 +95,14 @@ export default function UserProfile() {
           return;
         }
 
-        const [t, r] = await Promise.all([getUserTrips(id), getUserReviews(id)]);
+        const [t, r, f] = await Promise.all([
+          getUserTrips(id),
+          getUserReviews(id),
+          getFollowState(id),
+        ]);
         setTrips(t.data);
         setReviews(r.data);
+        setFollow(f.data);
       } catch (err) {
         setError(err.response?.data?.message || "Couldn't load this profile.");
       }
@@ -132,9 +166,31 @@ export default function UserProfile() {
           <h1 className="font-display text-[44px] leading-none m-0 mb-2">{user.name}</h1>
           <p className="m-0 text-[15px] text-muted">
             {EXPERIENCE_LABELS[user.experienceLevel] || "Beginner traveller"}
+            {follow.followerCount > 0 &&
+              ` · ${follow.followerCount} follower${follow.followerCount === 1 ? "" : "s"}`}
           </p>
         </div>
+
+        {!isMe && (
+          <button
+            onClick={toggleFollow}
+            disabled={followBusy}
+            className={`ml-auto rounded-full px-6 py-3 text-sm font-medium transition-colors disabled:opacity-60 ${
+              follow.following
+                ? "border border-line-bold hover:border-ink"
+                : "bg-ink text-canvas hover:bg-clay"
+            }`}
+          >
+            {follow.following ? "Following" : "Follow"}
+          </button>
+        )}
       </div>
+
+      {!isMe && !follow.following && (
+        <p className="text-sm text-faint -mt-6 mb-8">
+          Follow to hear about it when {user.name} posts a new public trip.
+        </p>
+      )}
 
       {user.bio && (
         <p className="text-[17px] leading-[1.65] text-ink-soft max-w-[62ch] mb-8">

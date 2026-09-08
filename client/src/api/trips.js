@@ -2,13 +2,15 @@ import api from "./axios";
 
 export const getTrips = () => api.get("/trips");
 export const createTrip = (data) => api.post("/trips", data);
-export const getTrip = (id) => api.get(`/trips/${id}`);
+export const getTrip = (id, invite) =>
+  api.get(`/trips/${id}`, invite ? { params: { invite } } : undefined);
 export const updateTripStatus = (id, status) =>
   api.patch(`/trips/${id}/status`, { status });
 
 export const leaveTrip = (id) => api.post(`/trips/${id}/leave`);
 
-export const requestJoin = (tripId) => api.post(`/trips/${tripId}/join`);
+export const requestJoin = (tripId, invite) =>
+  api.post(`/trips/${tripId}/join`, invite ? { invite } : {});
 export const getJoinRequests = (tripId) => api.get(`/trips/${tripId}/join-requests`);
 export const decideJoinRequest = (requestId, decision) =>
   api.patch(`/join-requests/${requestId}`, { decision });

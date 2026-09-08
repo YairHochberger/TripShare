@@ -2,6 +2,7 @@ const Trip = require("../models/Trip");
 const JoinRequest = require("../models/JoinRequest");
 const Review = require("../models/Review");
 const User = require("../models/User");
+const { notifyFollowersOfTrip } = require("./followController");
 
 // Which status an organizer is allowed to move a trip to, from where.
 // "full" is left out on purpose: the system sets it when capacity is reached.
@@ -27,8 +28,16 @@ function withViewerInfo(trip, userId, pendingRequestTripIds) {
 }
 
 // GET ALL TRIPS (browse/discover + trips the user is involved in)
+// Private trips stay out of browse unless you're already on them - they
+// are reached through their invite link instead.
 exports.getTrips = async (req, res) => {
-  const trips = await Trip.find()
+  const trips = await Trip.find({
+    $or: [
+      { isPrivate: { $ne: true } },
+      { organizer: req.user.id },
+      { members: req.user.id },
+    ],
+  })
     .sort({ createdAt: -1 })
     .populate("organizer", User.PUBLIC_FIELDS)
     .populate("members", User.PUBLIC_FIELDS);
@@ -60,6 +69,7 @@ exports.createTrip = async (req, res) => {
     paymentDueDate,
     lodgingPlan,
     travelPlan,
+    isPrivate,
   } = req.body;
 
   if (!title) {
@@ -80,9 +90,14 @@ exports.createTrip = async (req, res) => {
     paymentDueDate,
     lodgingPlan,
     travelPlan,
+    isPrivate: Boolean(isPrivate),
     organizer: req.user.id,
     members: [],
   });
+
+  // Followers hear about public trips only - an invite-only trip stays
+  // invite-only regardless of who follows the organizer.
+  if (!trip.isPrivate) await notifyFollowersOfTrip(trip);
 
   res.json(trip);
 };
@@ -98,6 +113,17 @@ exports.getTrip = async (req, res) => {
   if (!trip) return res.status(404).json({ message: "Not found" });
 
   const isOrganizer = String(trip.organizer._id) === String(req.user.id);
+  const isMember = trip.members.some((m) => String(m._id) === String(req.user.id));
+
+  // A private trip opens to the people on it, or to whoever holds the
+  // invite link the organizer shared.
+  if (trip.isPrivate && !isOrganizer && !isMember) {
+    if (req.query.invite !== trip.inviteToken) {
+      return res.status(403).json({
+        message: "This trip is private. Ask the organizer for the invite link.",
+      });
+    }
+  }
 
   const myPendingRequests = await JoinRequest.find({
     requester: req.user.id,
@@ -112,6 +138,9 @@ exports.getTrip = async (req, res) => {
   if (!result.role) {
     delete result.organizer.email;
   }
+
+  // Only the organizer needs the token - they're the one sharing it.
+  if (!isOrganizer) delete result.inviteToken;
 
   // So an applicant can open their own thread with the organizer.
   const myRequest = myPendingRequests.find(
@@ -149,6 +178,13 @@ exports.requestJoin = async (req, res) => {
 
   if (trip.status !== "open") {
     return res.status(400).json({ message: "This trip is not open for join requests" });
+  }
+
+  // Private trips accept requests only from people holding the invite.
+  if (trip.isPrivate && req.body.invite !== trip.inviteToken) {
+    return res
+      .status(403)
+      .json({ message: "This trip is private. You need the organizer's invite link." });
   }
 
   const existing = await JoinRequest.findOne({

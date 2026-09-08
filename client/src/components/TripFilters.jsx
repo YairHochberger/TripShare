@@ -11,16 +11,27 @@ export const EMPTY_FILTERS = {
   type: "",
   from: "",
   maxCost: "",
+  matchesMyLevel: false,
+};
+
+// How demanding each kind of trip is, so it can be weighed against the
+// experience level already stored on the profile. No new data needed.
+const LEVEL_RANK = { beginner: 1, intermediate: 2, advanced: 3 };
+const TYPE_DEMAND = {
+  relaxed: 1,
+  other: 1,
+  trek: 2,
+  climbing: 3,
 };
 
 export function isFiltering(filters) {
-  return Object.values(filters).some((v) => v !== "");
+  return Object.values(filters).some((v) => v !== "" && v !== false);
 }
 
 // Matches on place, type, start date and price. Place looks at the
 // meeting point, title and description, so "galilee" finds a trip whose
 // location is written into any of them.
-export function applyFilters(trips, filters) {
+export function applyFilters(trips, filters, myLevel = "beginner") {
   const place = filters.place.trim().toLowerCase();
   const maxCost = filters.maxCost ? Number(filters.maxCost) : null;
   const from = filters.from ? new Date(filters.from).getTime() : null;
@@ -48,6 +59,11 @@ export function applyFilters(trips, filters) {
       if (price > 0 && price > maxCost) return false;
     }
 
+    if (filters.matchesMyLevel) {
+      const demand = TYPE_DEMAND[trip.type] ?? 1;
+      if (demand > (LEVEL_RANK[myLevel] ?? 1)) return false;
+    }
+
     return true;
   });
 }
@@ -55,7 +71,19 @@ export function applyFilters(trips, filters) {
 const control =
   "w-full bg-surface border border-line-strong rounded-[10px] px-4 py-3 text-[15px] text-ink outline-none focus:border-ink transition-colors";
 
-export default function TripFilters({ filters, onChange, resultCount, totalCount }) {
+const LEVEL_LABELS = {
+  beginner: "beginner",
+  intermediate: "intermediate",
+  advanced: "experienced",
+};
+
+export default function TripFilters({
+  filters,
+  onChange,
+  resultCount,
+  totalCount,
+  myLevel,
+}) {
   const set = (key, value) => onChange({ ...filters, [key]: value });
   const active = isFiltering(filters);
 
@@ -117,6 +145,18 @@ export default function TripFilters({ filters, onChange, resultCount, totalCount
           />
         </label>
       </div>
+
+      <label className="flex items-center gap-3 mt-4 cursor-pointer w-fit">
+        <input
+          type="checkbox"
+          className="w-4 h-4 accent-[#2F5646]"
+          checked={filters.matchesMyLevel}
+          onChange={(e) => set("matchesMyLevel", e.target.checked)}
+        />
+        <span className="text-sm text-muted">
+          Only trips that suit a {LEVEL_LABELS[myLevel] || "beginner"} traveller
+        </span>
+      </label>
 
       {active && (
         <div className="flex items-center gap-4 mt-4">

@@ -19,6 +19,7 @@ import ReviewForm from "../components/ReviewForm";
 import TripMap from "../components/TripMap";
 import TripTabs from "../components/TripTabs";
 import ProposedChanges from "../components/ProposedChanges";
+import TripWeather from "../components/TripWeather";
 import { TripDetailsSkeleton } from "../components/Skeleton";
 
 const TYPE_LABELS = {
@@ -119,14 +120,24 @@ export default function TripDetails() {
   const [actionLoading, setActionLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(null);
   const [leaveResult, setLeaveResult] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  // Present when you arrived through an invite link to a private trip.
+  const invite = searchParams.get("invite");
 
   const loadTrip = async () => {
-    const res = await getTrip(id);
-    setTrip(res.data);
+    try {
+      const res = await getTrip(id, invite);
+      setTrip(res.data);
+      setLoadError("");
 
-    if (res.data.status === "completed") {
-      const reviewRes = await getTripReviews(id);
-      setReviews(reviewRes.data);
+      if (res.data.status === "completed") {
+        const reviewRes = await getTripReviews(id);
+        setReviews(reviewRes.data);
+      }
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load this trip.");
     }
   };
 
@@ -160,6 +171,23 @@ export default function TripDetails() {
       setActionLoading(false);
     }
   };
+
+  if (loadError) {
+    return (
+      <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
+        <div className="border border-dashed border-line-strong rounded-2xl px-[26px] py-[44px] text-center max-w-[620px] mx-auto">
+          <h1 className="font-display text-[30px] m-0 mb-3">This trip is private</h1>
+          <p className="m-0 mb-6 text-muted">{loadError}</p>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 bg-ink text-canvas rounded-full px-[22px] py-3 text-sm font-medium hover:bg-clay transition-colors"
+          >
+            Back to trips
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   if (!trip) return <TripDetailsSkeleton />;
 
@@ -253,6 +281,11 @@ export default function TripDetails() {
             <span className="text-[11px] tracking-[0.14em] uppercase text-faint">
               {TYPE_LABELS[trip.type] || "Other"}
             </span>
+            {trip.isPrivate && (
+              <span className="text-[11px] tracking-[0.14em] uppercase text-forest bg-forest-mist px-[11px] py-1.5 rounded-full">
+                Invite only
+              </span>
+            )}
           </div>
 
           <h1 className="font-display text-[46px] leading-[1.04] tracking-[-0.02em] m-0 mb-3">
@@ -330,7 +363,7 @@ export default function TripDetails() {
           {!trip.role && !trip.hasPendingRequest && trip.status === "open" && (
             <button
               disabled={actionLoading}
-              onClick={() => runAction(() => requestJoin(trip._id))}
+              onClick={() => runAction(() => requestJoin(trip._id, invite))}
               className="bg-ink text-canvas rounded-full px-6 py-3 text-sm font-medium hover:bg-clay disabled:opacity-60 transition-colors"
             >
               Request to join
@@ -390,6 +423,14 @@ export default function TripDetails() {
               <p className="m-0 text-[17px] leading-[1.65] text-ink-soft max-w-[62ch] text-pretty">
                 {trip.description || "No description has been added yet."}
               </p>
+            </section>
+
+            <section>
+              <SectionHeading>Weather</SectionHeading>
+              <p className="m-0 mb-5 text-sm text-faint">
+                What it should be doing while you're there.
+              </p>
+              <TripWeather trip={trip} />
             </section>
 
             {trip.role && (
@@ -522,6 +563,40 @@ export default function TripDetails() {
                     </p>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* Only the organizer gets the token, so only they see this */}
+            {trip.inviteToken && (
+              <div className="bg-surface border border-line rounded-[18px] p-[26px]">
+                <div className="text-[11px] tracking-[0.16em] uppercase text-faint mb-3.5">
+                  Invite link
+                </div>
+                <p className="m-0 mb-4 text-sm leading-[1.55] text-muted">
+                  This trip is hidden from browse. Share this link and whoever has it can
+                  see the trip and ask to join.
+                </p>
+
+                <div className="text-xs text-muted bg-canvas border border-line rounded-[10px] px-3 py-2.5 break-all mb-3">
+                  {`${window.location.origin}/trip/${trip._id}?invite=${trip.inviteToken}`}
+                </div>
+
+                <button
+                  onClick={async () => {
+                    const link = `${window.location.origin}/trip/${trip._id}?invite=${trip.inviteToken}`;
+                    try {
+                      await navigator.clipboard.writeText(link);
+                      setInviteCopied(true);
+                      setTimeout(() => setInviteCopied(false), 2000);
+                    } catch {
+                      // Clipboard can be blocked; the link is on screen to copy by hand.
+                      setInviteCopied(false);
+                    }
+                  }}
+                  className="w-full border border-line-bold rounded-full px-4 py-2.5 text-sm hover:border-ink transition-colors"
+                >
+                  {inviteCopied ? "Copied" : "Copy invite link"}
+                </button>
               </div>
             )}
 

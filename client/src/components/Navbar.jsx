@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import NotificationsBell from "./NotificationsBell";
 
 function TabLink({ to, children }) {
   return (
@@ -73,6 +74,8 @@ export default function Navbar() {
             </svg>
             New trip
           </Link>
+
+          <NotificationsBell />
 
           <div className="relative" ref={menuRef}>
             <button

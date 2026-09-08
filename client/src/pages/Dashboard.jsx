@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTrips } from "../api/trips";
+import { getMe } from "../api/users";
 import { Link, useSearchParams } from "react-router-dom";
 import TripCard from "../components/TripCard";
 import TripTabs from "../components/TripTabs";
@@ -151,6 +152,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS });
+  const [myLevel, setMyLevel] = useState("beginner");
 
   useEffect(() => {
     async function fetchTrips() {
@@ -165,11 +167,17 @@ export default function Dashboard() {
     }
 
     fetchTrips();
+
+    // Used by the "suits my level" filter; a failure just leaves the
+    // default, so it never blocks the page.
+    getMe()
+      .then((res) => setMyLevel(res.data.experienceLevel || "beginner"))
+      .catch(() => {});
   }, []);
 
   const myTrips = trips.filter((t) => t.role);
   const openTrips = trips.filter((t) => !t.role && t.status === "open");
-  const discoverTrips = applyFilters(openTrips, filters);
+  const discoverTrips = applyFilters(openTrips, filters, myLevel);
 
   const featured = myTrips[0];
   const otherMine = myTrips.slice(1);
@@ -233,6 +241,7 @@ export default function Dashboard() {
               onChange={setFilters}
               resultCount={discoverTrips.length}
               totalCount={openTrips.length}
+              myLevel={myLevel}
             />
           )}
 

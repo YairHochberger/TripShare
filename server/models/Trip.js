@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 const TRIP_TYPES = ["relaxed", "trek", "climbing", "other"];
 const TRIP_STATUSES = ["open", "full", "locked", "completed", "cancelled"];
@@ -66,6 +67,16 @@ const tripSchema = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     status: { type: String, enum: TRIP_STATUSES, default: "open" },
+
+    // A private trip is kept out of browse and search. The organizer
+    // shares the invite token instead; anyone holding it can view the
+    // trip and ask to join.
+    isPrivate: { type: Boolean, default: false },
+    inviteToken: {
+      type: String,
+      default: () => crypto.randomBytes(12).toString("hex"),
+      index: true,
+    },
   },
   { timestamps: true }
 );

@@ -9,6 +9,7 @@ const tripRoutes = require("./routes/tripRoutes");
 const joinRequestRoutes = require("./routes/joinRequestRoutes");
 const userRoutes = require("./routes/userRoutes");
 const proposalRoutes = require("./routes/proposalRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use("/api/trips", tripRoutes);
 app.use("/api/join-requests", joinRequestRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/proposals", proposalRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 console.log("1. Server started");
 

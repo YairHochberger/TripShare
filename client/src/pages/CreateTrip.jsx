@@ -69,6 +69,7 @@ export default function CreateTrip() {
     estimatedCost: "",
     finalCostDueDate: "",
     paymentDueDate: "",
+    isPrivate: false,
   });
   const [lodgingPlan, setLodgingPlan] = useState([]);
   const [travelPlan, setTravelPlan] = useState([]);
@@ -119,6 +120,7 @@ export default function CreateTrip() {
         paymentDueDate: form.paymentDueDate || undefined,
         lodgingPlan,
         travelPlan,
+        isPrivate: form.isPrivate,
       });
       navigate(`/trip/${res.data._id}`);
     } catch (err) {
@@ -200,6 +202,27 @@ export default function CreateTrip() {
                 />
               </label>
             </div>
+          </FormSection>
+
+          <FormSection title="Who can find it">
+            <label className="flex items-start gap-3.5 bg-surface border border-line rounded-[14px] p-5 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 accent-[#2F5646]"
+                checked={form.isPrivate}
+                onChange={(e) => updateField("isPrivate", e.target.checked)}
+              />
+              <span>
+                <span className="block text-[15px] font-medium mb-1">
+                  Invite only
+                </span>
+                <span className="block text-sm text-faint leading-[1.55]">
+                  {form.isPrivate
+                    ? "Hidden from browse. You'll get a link to share — anyone with it can see the trip and ask to join."
+                    : "Anyone can find this trip while browsing and ask to join."}
+                </span>
+              </span>
+            </label>
           </FormSection>
 
           <FormSection title="When & where">
