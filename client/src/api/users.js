@@ -1,5 +1,6 @@
 import api from "./axios";
 
+export const searchUsers = (q) => api.get("/users", { params: { q } });
 export const getMe = () => api.get("/users/me");
 export const updateMe = (data) => api.patch("/users/me", data);
 export const getUser = (id) => api.get(`/users/${id}`);

@@ -41,6 +41,7 @@ export default function Profile() {
           name: res.data.name || "",
           bio: res.data.bio || "",
           experienceLevel: res.data.experienceLevel || "beginner",
+          isPrivate: Boolean(res.data.isPrivate),
           emergencyContact: {
             name: res.data.emergencyContact?.name || "",
             phone: res.data.emergencyContact?.phone || "",
@@ -158,6 +159,27 @@ export default function Profile() {
                   </option>
                 ))}
               </select>
+            </label>
+          </FormSection>
+
+          <FormSection title="Privacy">
+            <label className="flex items-start gap-3.5 bg-surface border border-line rounded-[14px] p-5 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-1 w-4 h-4 accent-[#2F5646]"
+                checked={form.isPrivate}
+                onChange={(e) => updateField("isPrivate", e.target.checked)}
+              />
+              <span>
+                <span className="block text-[15px] font-medium mb-1">
+                  Keep my profile private
+                </span>
+                <span className="block text-sm text-faint leading-[1.55]">
+                  {form.isPrivate
+                    ? "You don't appear in search. Only people on the same trip as you can open your profile — everyone else sees just your name."
+                    : "Anyone signed in can find you in search and read your bio, trip history and reviews."}
+                </span>
+              </span>
             </label>
           </FormSection>
 

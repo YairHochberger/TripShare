@@ -59,6 +59,7 @@ export default function Navbar() {
 
         <nav className="hidden sm:flex items-center gap-[26px] flex-1">
           <TabLink to="/dashboard">Trips</TabLink>
+          <TabLink to="/people">People</TabLink>
           <TabLink to="/create">Create</TabLink>
         </nav>
 
@@ -138,8 +139,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      <nav className="sm:hidden flex items-center gap-6 px-8 pb-3">
+      <nav className="sm:hidden flex items-center gap-5 px-8 pb-3">
         <TabLink to="/dashboard">Trips</TabLink>
+        <TabLink to="/people">People</TabLink>
         <TabLink to="/create">Create</TabLink>
         <TabLink to="/profile">Profile</TabLink>
       </nav>

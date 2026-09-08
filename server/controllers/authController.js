@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 // REGISTER
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, isPrivate } = req.body;
 
   const existingUser = await User.findOne({ email });
   if (existingUser)
@@ -16,6 +16,7 @@ exports.register = async (req, res) => {
     name,
     email,
     password: hashedPassword,
+    isPrivate: Boolean(isPrivate),
   });
 
   res.json({ message: "User created" });

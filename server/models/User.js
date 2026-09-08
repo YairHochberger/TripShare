@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
       phone: { type: String, default: "" },
     },
 
+    // A private profile is hidden from search and from strangers. People
+    // who share a trip with them can still see it, so the group can vet
+    // each other.
+    isPrivate: { type: Boolean, default: false },
+
     // Kept separately so the same person can be trusted differently
     // as an organizer than as a participant.
     organizerRating: { type: ratingSchema, default: () => ({}) },

@@ -8,6 +8,7 @@ import CreateTrip from "./pages/CreateTrip";
 import TripDetails from "./pages/TripDetails";
 import Profile from "./pages/Profile";
 import UserProfile from "./pages/UserProfile";
+import People from "./pages/People";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -51,6 +52,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/people"
+          element={
+            <ProtectedRoute>
+              <People />
             </ProtectedRoute>
           }
         />

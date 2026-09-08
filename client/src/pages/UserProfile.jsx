@@ -55,12 +55,18 @@ export default function UserProfile() {
   useEffect(() => {
     async function load() {
       try {
-        const [u, t, r] = await Promise.all([
-          getUser(id),
-          getUserTrips(id),
-          getUserReviews(id),
-        ]);
+        const u = await getUser(id);
         setUser(u.data);
+
+        // A private profile returns just a name; the history and review
+        // endpoints refuse it too, so don't bother asking.
+        if (u.data.restricted) {
+          setTrips([]);
+          setReviews([]);
+          return;
+        }
+
+        const [t, r] = await Promise.all([getUserTrips(id), getUserReviews(id)]);
         setTrips(t.data);
         setReviews(r.data);
       } catch (err) {
@@ -72,6 +78,32 @@ export default function UserProfile() {
 
   if (error) return <p className="max-w-[1180px] mx-auto px-8 py-14 text-clay-deep">{error}</p>;
   if (!user) return <ProfileSkeleton />;
+
+  if (user.restricted) {
+    return (
+      <main className="max-w-[1180px] mx-auto px-8 pt-14 pb-24">
+        <div className="flex flex-wrap gap-7 items-center mb-8">
+          <span className="w-[92px] h-[92px] rounded-full bg-line text-muted grid place-items-center font-display text-[38px]">
+            {user.name?.[0]?.toUpperCase() || "?"}
+          </span>
+          <div>
+            <h1 className="font-display text-[44px] leading-none m-0 mb-2">{user.name}</h1>
+            <p className="m-0 text-[15px] text-muted">This profile is private</p>
+          </div>
+        </div>
+
+        <div className="border border-dashed border-line-strong rounded-2xl px-[26px] py-[34px] text-center max-w-[620px]">
+          <p className="m-0 mb-1.5 text-base text-muted">
+            {user.name} keeps their profile private.
+          </p>
+          <p className="m-0 text-sm text-faint">
+            Their trips and reviews open up to people on the same trip. Join a trip
+            together and you'll see them here.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const completed = trips.filter((t) => t.status === "completed").length;
   const organized = trips.filter((t) => t.role === "organizer").length;

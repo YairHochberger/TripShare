@@ -6,7 +6,12 @@ const field =
   "w-full bg-surface border border-line-strong rounded-[10px] px-4 py-3.5 text-base text-ink outline-none focus:border-ink transition-colors";
 
 export default function Register() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    isPrivate: false,
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -85,6 +90,22 @@ export default function Register() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
+            </label>
+
+            <label className="flex items-start gap-3 bg-canvas border border-line rounded-[10px] p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5 w-4 h-4 accent-[#2F5646]"
+                checked={form.isPrivate}
+                onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })}
+              />
+              <span>
+                <span className="block text-sm font-medium">Keep my profile private</span>
+                <span className="block text-[13px] text-faint leading-[1.5] mt-0.5">
+                  You won't show up in search, and only people on the same trip as you can
+                  see your profile. You can change this later.
+                </span>
+              </span>
             </label>
 
             {error && <p className="text-sm text-clay-deep m-0">{error}</p>}
