@@ -4,6 +4,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import TripCard from "../components/TripCard";
 import TripTabs from "../components/TripTabs";
 import PhotoPlaceholder from "../components/PhotoPlaceholder";
+import TripFilters, {
+  EMPTY_FILTERS,
+  applyFilters,
+  isFiltering,
+} from "../components/TripFilters";
 import { TripCardSkeleton } from "../components/Skeleton";
 
 const TYPE_LABELS = {
@@ -145,6 +150,7 @@ export default function Dashboard() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState({ ...EMPTY_FILTERS });
 
   useEffect(() => {
     async function fetchTrips() {
@@ -162,7 +168,8 @@ export default function Dashboard() {
   }, []);
 
   const myTrips = trips.filter((t) => t.role);
-  const discoverTrips = trips.filter((t) => !t.role && t.status === "open");
+  const openTrips = trips.filter((t) => !t.role && t.status === "open");
+  const discoverTrips = applyFilters(openTrips, filters);
 
   const featured = myTrips[0];
   const otherMine = myTrips.slice(1);
@@ -214,13 +221,22 @@ export default function Dashboard() {
           <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
             <h2 className="font-display text-[30px] m-0">Trips looking for people</h2>
             <span className="text-[13px] text-faint">
-              {discoverTrips.length === 0
+              {openTrips.length === 0
                 ? "Nothing open right now"
-                : `${discoverTrips.length} open · organised by travellers with reviews`}
+                : `${openTrips.length} open · organised by travellers with reviews`}
             </span>
           </div>
 
-          {discoverTrips.length === 0 ? (
+          {openTrips.length > 0 && (
+            <TripFilters
+              filters={filters}
+              onChange={setFilters}
+              resultCount={discoverTrips.length}
+              totalCount={openTrips.length}
+            />
+          )}
+
+          {openTrips.length === 0 ? (
             <EmptyState
               title="No trips to join yet"
               action={
@@ -234,6 +250,20 @@ export default function Dashboard() {
             >
               Nobody has an open trip at the moment. Start your own and let people ask to
               join.
+            </EmptyState>
+          ) : discoverTrips.length === 0 ? (
+            <EmptyState
+              title="Nothing matches those filters"
+              action={
+                <button
+                  onClick={() => setFilters({ ...EMPTY_FILTERS })}
+                  className="inline-flex items-center gap-2 border border-line-bold rounded-full px-[22px] py-3 text-sm hover:border-ink transition-colors"
+                >
+                  Clear filters
+                </button>
+              }
+            >
+              Try widening the dates, the price, or where you're willing to go.
             </EmptyState>
           ) : (
             <div className="flex flex-col gap-5">
