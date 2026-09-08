@@ -1011,10 +1011,10 @@ export default function TripDetails() {
               </li>
 
               {trip.members.map((m) => (
-                <li key={m._id}>
+                <li key={m._id} className="border-t border-line">
                   <Link
                     to={`/users/${m._id}`}
-                    className="w-full flex items-center gap-3.5 border-t border-line py-[18px] px-1 hover:bg-surface transition-colors"
+                    className="w-full flex items-center gap-3.5 py-[18px] px-1 hover:bg-surface transition-colors"
                   >
                     <Avatar name={m.name} tone="sand" size={38} />
                     <span className="flex-1 min-w-0">
@@ -1027,6 +1027,29 @@ export default function TripDetails() {
                       <path d="M9 6l6 6-6 6" />
                     </svg>
                   </Link>
+
+                  {/* Sent only to the organizer */}
+                  {trip.role === "organizer" && (
+                    <div className="pb-4 px-1 -mt-1">
+                      {m.emergencyContact?.phone ? (
+                        <div className="text-[13px] text-muted bg-surface border border-line rounded-[10px] px-3.5 py-2.5">
+                          <span className="text-faint">In an emergency: </span>
+                          {m.emergencyContact.name}
+                          {" · "}
+                          <a
+                            href={`tel:${m.emergencyContact.phone.replace(/\s/g, "")}`}
+                            className="text-clay hover:text-clay-deep"
+                          >
+                            {m.emergencyContact.phone}
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="text-[13px] text-faint">
+                          No emergency contact on file yet.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

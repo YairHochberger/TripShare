@@ -4,7 +4,17 @@ const jwt = require("jsonwebtoken");
 
 // REGISTER
 exports.register = async (req, res) => {
-  const { name, email, password, isPrivate } = req.body;
+  const { name, email, password, isPrivate, emergencyContact } = req.body;
+
+  // Required from the start: if something goes wrong on a trip, the
+  // organizer needs someone to call.
+  const contactName = emergencyContact?.name?.trim();
+  const contactPhone = emergencyContact?.phone?.trim();
+  if (!contactName || !contactPhone) {
+    return res
+      .status(400)
+      .json({ message: "An emergency contact name and phone are required" });
+  }
 
   const existingUser = await User.findOne({ email });
   if (existingUser)
@@ -17,6 +27,7 @@ exports.register = async (req, res) => {
     email,
     password: hashedPassword,
     isPrivate: Boolean(isPrivate),
+    emergencyContact: { name: contactName, phone: contactPhone },
   });
 
   res.json({ message: "User created" });

@@ -11,7 +11,11 @@ export default function Register() {
     email: "",
     password: "",
     isPrivate: false,
+    emergencyContact: { name: "", phone: "" },
   });
+
+  const setContact = (key, value) =>
+    setForm({ ...form, emergencyContact: { ...form.emergencyContact, [key]: value } });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -91,6 +95,32 @@ export default function Register() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
               />
             </label>
+
+            <div className="border-t border-line pt-4">
+              <div className="text-[13px] font-medium mb-1">Emergency contact</div>
+              <p className="m-0 mb-3 text-[13px] text-faint leading-[1.5]">
+                Someone we can reach if something happens on a trip. Only the organizer
+                of a trip you join can see this.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <input
+                  className={field}
+                  placeholder="Contact name"
+                  value={form.emergencyContact.name}
+                  onChange={(e) => setContact("name", e.target.value)}
+                  required
+                />
+                <input
+                  className={field}
+                  type="tel"
+                  placeholder="Contact phone"
+                  value={form.emergencyContact.phone}
+                  onChange={(e) => setContact("phone", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
 
             <label className="flex items-start gap-3 bg-canvas border border-line rounded-[10px] p-4 cursor-pointer">
               <input

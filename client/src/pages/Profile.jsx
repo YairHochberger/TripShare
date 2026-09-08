@@ -185,7 +185,9 @@ export default function Profile() {
 
           <FormSection title="Emergency contact">
             <p className="m-0 mb-5 text-sm text-faint max-w-[56ch]">
-              Entered once here and reused for every trip you join. Only you can see it.
+              Entered once here and reused for every trip you join. Seen only by the
+              organizer of a trip you're on — never by other participants, and never on
+              your public profile. Required.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-5">
@@ -196,6 +198,7 @@ export default function Profile() {
                   placeholder="Who to call"
                   value={form.emergencyContact.name}
                   onChange={(e) => updateEmergency("name", e.target.value)}
+                  required
                 />
               </label>
               <label className="block">
@@ -206,6 +209,7 @@ export default function Profile() {
                   placeholder="050-0000000"
                   value={form.emergencyContact.phone}
                   onChange={(e) => updateEmergency("phone", e.target.value)}
+                  required
                 />
               </label>
             </div>

@@ -48,10 +48,17 @@ exports.updateMe = async (req, res) => {
   if (experienceLevel !== undefined) updates.experienceLevel = experienceLevel;
   if (isPrivate !== undefined) updates.isPrivate = Boolean(isPrivate);
   if (emergencyContact !== undefined) {
-    updates.emergencyContact = {
-      name: emergencyContact.name || "",
-      phone: emergencyContact.phone || "",
-    };
+    // It's required, so it can't be blanked out once set.
+    const contactName = emergencyContact.name?.trim();
+    const contactPhone = emergencyContact.phone?.trim();
+
+    if (!contactName || !contactPhone) {
+      return res
+        .status(400)
+        .json({ message: "An emergency contact name and phone are required" });
+    }
+
+    updates.emergencyContact = { name: contactName, phone: contactPhone };
   }
 
   const user = await User.findByIdAndUpdate(req.user.id, updates, {

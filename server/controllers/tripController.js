@@ -142,6 +142,20 @@ exports.getTrip = async (req, res) => {
   // Only the organizer needs the token - they're the one sharing it.
   if (!isOrganizer) delete result.inviteToken;
 
+  // The organizer is the person who'd have to make the call, so they -
+  // and nobody else - see their participants' emergency contacts.
+  if (isOrganizer && trip.members.length > 0) {
+    const contacts = await User.find({ _id: { $in: trip.members } }).select(
+      "emergencyContact"
+    );
+    const byId = new Map(contacts.map((c) => [String(c._id), c.emergencyContact]));
+
+    result.members = result.members.map((m) => ({
+      ...m,
+      emergencyContact: byId.get(String(m._id)) || null,
+    }));
+  }
+
   // So an applicant can open their own thread with the organizer.
   const myRequest = myPendingRequests.find(
     (r) => String(r.trip) === String(trip._id)
