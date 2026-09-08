@@ -177,13 +177,19 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  const myTrips = trips.filter((t) => t.role);
+  // Trips you organize come first, then the ones you joined.
+  const myTrips = trips
+    .filter((t) => t.role)
+    .sort((a, b) => {
+      if (a.role === b.role) return 0;
+      return a.role === "organizer" ? -1 : 1;
+    });
+
   const openTrips = trips.filter((t) => !t.role && t.status === "open");
   const discoverTrips = applyFilters(openTrips, filters, myLevel);
   const filterCount = activeFilterCount(filters);
 
   const featured = myTrips[0];
-  const otherMine = myTrips.slice(1);
 
   const organizing = myTrips.filter((t) => t.role === "organizer").length;
   const seats = featured?.maxCapacity
@@ -368,25 +374,11 @@ export default function Dashboard() {
               Start one of your own, or browse the trips other people are looking to fill.
             </EmptyState>
           ) : (
-            <>
-              <FeaturedTrip trip={featured} />
-
-              {otherMine.length > 0 && (
-                <div className="mt-[72px]">
-                  <div className="flex items-baseline justify-between gap-5 border-b border-line pb-4 mb-7">
-                    <h2 className="font-display text-[30px] m-0">Also yours</h2>
-                    <span className="text-[13px] text-faint">
-                      {otherMine.length} more
-                    </span>
-                  </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[22px]">
-                    {otherMine.map((trip) => (
-                      <TripCard key={trip._id} trip={trip} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <div className="flex flex-col gap-7">
+              {myTrips.map((trip) => (
+                <FeaturedTrip key={trip._id} trip={trip} />
+              ))}
+            </div>
           )}
         </section>
       )}
