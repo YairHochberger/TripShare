@@ -1,5 +1,4 @@
 {
-  "dependencies": {
-    "origin": "^0.5.8"
-  }
+  "name": "tripshare",
+  "private": true
 }
